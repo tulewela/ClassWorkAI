@@ -1,14 +1,14 @@
 import streamlit as st
 
-# Seiten-Konfiguration (Titel im Browser-Tab, Icon und breites Layout)
+# Seiten-Konfiguration
 st.set_page_config(
-    page_title="ClassWork AI",
-    page_icon="🏫",
+    page_title="ClassWork AI (Teachable Machine)",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Initialisierung des Session States für die Navigation (falls noch nicht gesetzt)
+# Initialisierung des Session States für die Navigation
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
@@ -28,7 +28,8 @@ def go_to_home():
 # ==========================================
 if st.session_state.page == "home":
     st.title("🏫 ClassWork AI")
-    st.subheader("Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen")
+    st.markdown("### *Modell-Variante A: Eigenes Teachable-Machine-Modell*")
+    st.markdown("Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen im Unterricht.")
     st.markdown("---")
 
     # Zwei Haupt-Buttons im Grid-Layout
@@ -36,51 +37,45 @@ if st.session_state.page == "home":
 
     with col1:
         st.info("### Für Lehrkräfte")
-        st.write("Erstelle einen Unterrichtsraum und behalte den Status der Klasse im Blick, ohne die Bildschirme der Schüler einzusehen.")
+        st.write("Erstelle einen Unterrichtsraum und behalte den Status der Klasse im Blick – basierend auf deinem individuell trainierten Modell.")
         st.button("🏫 Als Lehrer Raum hosten", on_click=go_to_teacher, use_container_width=True, type="primary")
 
     with col2:
         st.success("### Für Schülerinnen & Schüler")
-        st.write("Tritt dem Raum deines Lehrers bei. Dein Bildschirm wird automatisch und geschützt im Hintergrund analysiert.")
+        st.write("Tritt dem Raum deines Lehrers bei. Dein Bildschirm wird im Hintergrund automatisch und geschützt analysiert.")
         st.button("💻 Als Schüler Raum beitreten", on_click=go_to_student, use_container_width=True, type="primary")
 
     st.markdown("---")
-    st.markdown("### ❓ Wie es funktioniert")
+    st.markdown("### ❓ Wie es funktioniert (Teachable Machine)")
     
     info_col1, info_col2, info_col3 = st.columns(3)
     with info_col1:
         st.markdown("**1. Raum beitreten**")
-        st.caption("Schüler treten mit einer Raum-ID bei und starten die automatische Übertragung.")
+        st.caption("Schüler verbinden sich mit der Raum-ID des Lehrers.")
     with info_col2:
-        st.markdown("**2. KI-Analyse**")
-        st.caption("Die KI erkennt lokal/geschützt den Typ der genutzten App (z.B. Notizen vs. Spiel).")
+        st.markdown("**2. Lokale TM-Analyse**")
+        st.caption("Das selbst trainierte Keras/TensorFlow-Modell klassifiziert die App-Screenshots.")
     with info_col3:
         st.markdown("**3. Status-Anzeige**")
-        st.caption("Der Lehrer sieht nur einen Farb-Status (Grün/Rot) – die Privatsphäre bleibt geschützt.")
+        st.caption("Der Lehrer sieht ausschließlich den Farb-Status (Grün/Rot) im Dashboard.")
 
 
 # ==========================================
 # SEITE 2: LEHRER-DASHBOARD (HOST)
 # ==========================================
 elif st.session_state.page == "teacher":
-    # Sidebar für Einstellungen
-    st.sidebar.title("⚙️ Einstellungen")
+    # Sidebar für Einstellungen (Getrennt für Teachable Machine)
+    st.sidebar.title("⚙️ Lehrer-Steuerung")
     st.sidebar.button("⬅️ Zurück zum Hauptmenü", on_click=go_to_home)
     st.sidebar.markdown("---")
     
-    st.sidebar.subheader("KI-Modell Auswahl")
-    model_choice = st.sidebar.radio(
-        "Wähle das Modell für die Auswertung:",
-        ("Teachable Machine (Eigenes Modell)", "Vortrainiertes Modell (Hugging Face)"),
-        index=0
-    )
-    
+    st.sidebar.info("📌 **Aktive App-Version:**\nTeachable Machine (Eigenes Modell)")
     st.sidebar.markdown("---")
-    st.sidebar.write("**Raum-ID:** `CLASS-10B-2026`")
+    st.sidebar.write("**Raum-ID:** `CLASS-TM-2026`")
 
     # Hauptinhalt Lehrer-Dashboard
     st.title("👨‍🏫 ClassWork AI – Lehrer-Dashboard")
-    st.markdown(f"**Aktiver Raum:** `CLASS-10B-2026` | **Modell:** *{model_choice}*")
+    st.markdown("**Aktiver Raum:** `CLASS-TM-2026` | **KI:** *Teachable Machine (Custom Model)*")
     st.markdown("---")
 
     st.subheader("Übersicht der Klasse (Live-Status)")
@@ -90,20 +85,20 @@ elif st.session_state.page == "teacher":
 
     with col1:
         st.markdown("### Max")
-        st.success("🟢 **Status:** Aufgabenbezogen")
-        st.caption("Erkannte App: GoodNotes / Notizen")
+        st.success("🟢 **Status:** Unterrichtsrelevant")
+        st.caption("Klasse: Unterricht (GoodNotes)")
         st.caption("Letztes Update: Vor 2 Sekunden")
 
     with col2:
         st.markdown("### Anna")
         st.error("🔴 **Status:** Ablenkung erkannt")
-        st.caption("Erkannte App: Spiel / Social Media")
+        st.caption("Klasse: Ablenkung (Spiel)")
         st.caption("Letztes Update: Vor 5 Sekunden")
 
     with col3:
         st.markdown("### Lukas")
-        st.success("🟢 **Status:** Aufgabenbezogen")
-        st.caption("Erkannte App: Safari (Recherche)")
+        st.success("🟢 **Status:** Unterrichtsrelevant")
+        st.caption("Klasse: Unterricht (Recherche)")
         st.caption("Letztes Update: Vor 1 Sekunde")
 
 
@@ -118,7 +113,7 @@ elif st.session_state.page == "student":
 
     # Formular zum Beitreten
     st.subheader("1. Raum-ID eingeben")
-    room_id = st.text_input("Gib die Raum-ID deines Lehrers ein:", placeholder="z. B. CLASS-10B-2026")
+    room_id = st.text_input("Gib die Raum-ID deines Lehrers ein:", placeholder="z. B. CLASS-TM-2026")
     
     if st.button("Verbinden", type="primary"):
         if room_id:
@@ -129,6 +124,5 @@ elif st.session_state.page == "student":
     st.markdown("---")
     st.subheader("2. Übertragungs-Status")
     
-    # Vorschau auf den aktiven Status des Schülers
     st.info("🟢 **Status:** Aktiv & Verbunden")
-    st.write("Deine Bildschirmaktivität wird im Hintergrund geschützt analysiert. Der Lehrer sieht **keinen** Bildschirminhalt, sondern nur deinen Arbeitsstatus.")
+    st.write("Deine Bildschirmaktivität wird im Hintergrund durch dein Teachable-Machine-Modell analysiert. Der Lehrer sieht **keine** Bildschirminhalte, sondern nur deinen Arbeitsstatus.")
