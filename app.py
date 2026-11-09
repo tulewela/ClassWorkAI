@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Custom CSS für das entspannte, weißlich-transparente Design & riesige quadratische Buttons
+# 2. Custom CSS: Nur Startbildschirm-Buttons groß & quadratisch, Rest normal
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -24,27 +24,23 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* RIESIGE, QUADRATISCHE, ENTSPANNTERE BUTTONS MIT DUNKLEM RAND */
-    .stButton > button {
-        background-color: rgba(75, 192, 200, 0.15) !important;
+    /* NUR DIE BUTTONS AUF DEM STARTBILDSCHIRM (Groß, quadratisch, türkis #63C5DA) */
+    div.stButton > button {
+        background-color: rgba(99, 197, 218, 0.2) !important;
         color: #1A365D !important;
         border-radius: 20px !important;
         height: 180px !important;
         font-size: 22px !important;
         font-weight: 700 !important;
-        border: 3px solid #2B6CB0 !important;
+        border: 3px solid #319795 !important;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
         transition: all 0.2s ease-in-out;
         width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
     }
     
-    .stButton > button:hover {
-        background-color: rgba(75, 192, 200, 0.25) !important;
-        border-color: #1A365D !important;
+    div.stButton > button:hover {
+        background-color: rgba(99, 197, 218, 0.35) !important;
+        border-color: #2C7A7B !important;
         transform: translateY(-2px);
     }
     
@@ -59,23 +55,23 @@ st.markdown("""
 
     /* Raum-Badge */
     .room-badge {
-        background-color: #4BC0C8;
+        background-color: #63C5DA;
         color: white;
         padding: 10px 22px;
         border-radius: 25px;
         font-weight: bold;
         font-size: 18px;
-        box-shadow: 0 4px 15px rgba(75, 192, 200, 0.4);
+        box-shadow: 0 4px 15px rgba(99, 197, 218, 0.4);
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Hilfsfunktion zum sicheren Laden deines echten Logos
+# Hilfsfunktion zum sicheren Laden deines PNG-Logos
 def render_logo(width=80):
-    if os.path.exists("ClassWorkAILogo.jpeg"):
-        st.image("ClassWorkAILogo.jpeg", width=width)
+    if os.path.exists("ClassWorkAILogo.png"):
+        st.image("ClassWorkAILogo.png", width=width)
     else:
-        st.markdown(f"<h3 style='margin:0;'>Logo fehlt</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='margin:0;'>Logo fehlt (ClassWorkAILogo.png hochladen)</h3>", unsafe_allow_html=True)
 
 # Navigation via Session State
 if "page" not in st.session_state:
@@ -92,7 +88,6 @@ def navigate_to(page_name):
 # 1. STARTBILDSCHIRM (HOME)
 # ==========================================
 if st.session_state.page == "home":
-    # Zentriertes Layout für den perfekten Startbildschirm
     _, center_col, _ = st.columns([1, 2.5, 1])
     
     with center_col:
@@ -106,16 +101,16 @@ if st.session_state.page == "home":
         st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 42px; margin-top: 15px;'>ClassWork AI</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 50px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-        # Große, quadratische, entspannte Buttons nebeneinander (ohne Emojis)
+        # Große, quadratische, zentrierte Buttons nebeneinander (ohne Emojis)
         btn_col1, btn_col2 = st.columns(2)
         
         with btn_col1:
-            if st.button("Als Lehrer\nRaum hosten"):
+            if st.button("Als Lehrer\nRaum hosten", key="host_btn"):
                 navigate_to("teacher_dashboard")
                 st.rerun()
                 
         with btn_col2:
-            if st.button("Als Schüler\nRaum beitreten"):
+            if st.button("Als Schüler\nRaum beitreten", key="join_btn"):
                 navigate_to("student_join")
                 st.rerun()
 
@@ -148,7 +143,7 @@ elif st.session_state.page == "student_join":
             room_code_input = st.text_input("Raum-Code", placeholder="Gib den 6-stelligen Raum-Code ein", label_visibility="collapsed")
             
             st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("Raum beitreten"):
+            if st.button("Raum beitreten", key="submit_join"):
                 if room_code_input == "482915" or len(room_code_input) == 6:
                     st.success("Erfolgreich verbunden!")
                 else:
@@ -306,7 +301,7 @@ elif st.session_state.page == "teacher_settings":
             
     st.markdown("<br>", unsafe_allow_html=True)
     
-    if st.button("🚪 Logout / Abmelden"):
+    if st.button("🚪 Logout / Abmelden", key="logout_btn"):
         navigate_to("home")
         st.rerun()
         
