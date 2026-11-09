@@ -2,7 +2,7 @@ import streamlit as st
 from PIL import Image
 import os
 
-# 1. Seitengestaltung
+# 1. Seitengestaltung & Fix gegen Scrollen auf Startseite
 st.set_page_config(
     page_title="ClassWork AI",
     page_icon="🏫",
@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Custom CSS für kompakten Startbildschirm, volle Deckkraft & perfekte Zentrierung
+# 2. Custom CSS: Fixes Layout ohne Scrollen, riesige gleichgroße Buttons (#7AC4C3), fette Schrift
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -23,25 +23,30 @@ st.markdown("""
     /* Streamlit Standard-Elemente ausblenden */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+    header {visibility: hidden;}
     
-    /* STARTBILDSCHIRM BUTTONS: 100% deckend (#63C5DA), weißer Text, massive Größe */
+    /* STARTBILDSCHIRM BUTTONS: 2.5x so groß, quadratisch, fette weiße Schrift, Farbe #7AC4C3 */
     div.stButton > button {
-        background-color: #63C5DA !important;
+        background-color: #7AC4C3 !important;
         color: #FFFFFF !important;
         border-radius: 24px !important;
-        height: 210px !important;
-        font-size: 26px !important;
-        font-weight: 700 !important;
-        border: 3px solid #2C7A7B !important;
-        box-shadow: 0 10px 25px rgba(99, 197, 218, 0.3) !important;
+        height: 250px !important;
+        font-size: 30px !important;
+        font-weight: 800 !important;
+        border: 4px solid #3B9392 !important;
+        box-shadow: 0 12px 30px rgba(122, 196, 195, 0.4) !important;
         transition: all 0.2s ease-in-out;
         width: 100%;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
     }
     
     div.stButton > button:hover {
-        background-color: #4AB8CE !important;
-        border-color: #1A5253 !important;
+        background-color: #65B3B2 !important;
+        border-color: #287271 !important;
         transform: translateY(-2px);
     }
     
@@ -56,13 +61,13 @@ st.markdown("""
 
     /* Raum-Badge */
     .room-badge {
-        background-color: #63C5DA;
+        background-color: #7AC4C3;
         color: white;
         padding: 10px 22px;
         border-radius: 25px;
         font-weight: bold;
         font-size: 18px;
-        box-shadow: 0 4px 15px rgba(99, 197, 218, 0.4);
+        box-shadow: 0 4px 15px rgba(122, 196, 195, 0.4);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -86,24 +91,22 @@ def navigate_to(page_name):
 
 
 # ==========================================
-# 1. STARTBILDSCHIRM (HOME) - Ohne Scrollen, perfekt zentriert
+# 1. STARTBILDSCHIRM (HOME) - Logo oben links, absolut kein Scrollen
 # ==========================================
 if st.session_state.page == "home":
-    _, center_col, _ = st.columns([1, 2.8, 1])
+    # Logo oben links platziert
+    top_left_col, _ = st.columns([1, 10])
+    with top_left_col:
+        render_logo(width=70)
+
+    # Hauptbereich perfekt zentriert und kompakt (kein Scrollen)
+    _, center_col, _ = st.columns([0.5, 3, 0.5])
     
     with center_col:
-        # Minimaler Abstand nach oben, damit alles perfekt in den Viewport passt (kein Scrollen)
-        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
-        
-        # Logo zentriert ganz oben
-        logo_c1, logo_c2, logo_c3 = st.columns([1, 1.2, 1])
-        with logo_c2:
-            render_logo(width=160)
-            
-        st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 44px; margin-top: 10px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 35px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 42px; margin-top: -10px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #4A5568; font-size: 17px; margin-bottom: 30px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-        # Große, quadratische, deckende Buttons nebeneinander
+        # Gleich große, riesige, zentrierte Buttons nebeneinander
         btn_col1, btn_col2 = st.columns(2)
         
         with btn_col1:
@@ -116,8 +119,8 @@ if st.session_state.page == "home":
                 navigate_to("student_join")
                 st.rerun()
 
-        st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 14px;'>KI-Analyse im Hintergrund, ohne Video</p>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 13px;'>KI-Analyse im Hintergrund, ohne Video</p>", unsafe_allow_html=True)
 
 
 # ==========================================
