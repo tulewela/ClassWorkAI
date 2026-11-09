@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Custom CSS: Nur Startbildschirm-Buttons groß & quadratisch, Rest normal
+# 2. Custom CSS für kompakten Startbildschirm, volle Deckkraft & perfekte Zentrierung
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -24,23 +24,24 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* NUR DIE BUTTONS AUF DEM STARTBILDSCHIRM (Groß, quadratisch, türkis #63C5DA) */
+    /* STARTBILDSCHIRM BUTTONS: 100% deckend (#63C5DA), weißer Text, massive Größe */
     div.stButton > button {
-        background-color: rgba(99, 197, 218, 0.2) !important;
-        color: #1A365D !important;
-        border-radius: 20px !important;
-        height: 180px !important;
-        font-size: 22px !important;
+        background-color: #63C5DA !important;
+        color: #FFFFFF !important;
+        border-radius: 24px !important;
+        height: 210px !important;
+        font-size: 26px !important;
         font-weight: 700 !important;
-        border: 3px solid #319795 !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        border: 3px solid #2C7A7B !important;
+        box-shadow: 0 10px 25px rgba(99, 197, 218, 0.3) !important;
         transition: all 0.2s ease-in-out;
         width: 100%;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
     }
     
     div.stButton > button:hover {
-        background-color: rgba(99, 197, 218, 0.35) !important;
-        border-color: #2C7A7B !important;
+        background-color: #4AB8CE !important;
+        border-color: #1A5253 !important;
         transform: translateY(-2px);
     }
     
@@ -85,23 +86,24 @@ def navigate_to(page_name):
 
 
 # ==========================================
-# 1. STARTBILDSCHIRM (HOME)
+# 1. STARTBILDSCHIRM (HOME) - Ohne Scrollen, perfekt zentriert
 # ==========================================
 if st.session_state.page == "home":
-    _, center_col, _ = st.columns([1, 2.5, 1])
+    _, center_col, _ = st.columns([1, 2.8, 1])
     
     with center_col:
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        # Minimaler Abstand nach oben, damit alles perfekt in den Viewport passt (kein Scrollen)
+        st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
         
-        # Logo zentriert direkt über der Überschrift
-        logo_c1, logo_c2, logo_c3 = st.columns([1, 1, 1])
+        # Logo zentriert ganz oben
+        logo_c1, logo_c2, logo_c3 = st.columns([1, 1.2, 1])
         with logo_c2:
-            render_logo(width=150)
+            render_logo(width=160)
             
-        st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 42px; margin-top: 15px;'>ClassWork AI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 50px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 44px; margin-top: 10px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 35px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-        # Große, quadratische, zentrierte Buttons nebeneinander (ohne Emojis)
+        # Große, quadratische, deckende Buttons nebeneinander
         btn_col1, btn_col2 = st.columns(2)
         
         with btn_col1:
@@ -114,7 +116,7 @@ if st.session_state.page == "home":
                 navigate_to("student_join")
                 st.rerun()
 
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 14px;'>KI-Analyse im Hintergrund, ohne Video</p>", unsafe_allow_html=True)
 
 
