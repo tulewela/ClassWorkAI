@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Aggressives Custom CSS für das echte EdTech-Design, riesige Buttons & Petrol-Farben
+# 2. Aggressives Custom CSS für das perfekte EdTech-Design & Startbildschirm-Buttons
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -20,39 +20,31 @@ st.markdown("""
         color: #2D3748;
     }
     
-    /* Streamlit Standard-Elemente für sauberes Layout ausblenden */
+    /* Streamlit Standard-Elemente ausblenden */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* RIESIGE, SCHÖNE HAUPT-BUTTONS (Petrol & modern) */
+    /* SPEZIELLE GROSSE & TRANSPARENTE PETROL-BUTTONS FÜR DEN STARTBILDSCHIRM */
     .stButton > button {
-        background-color: #4BC0C8 !important;
+        background-color: rgba(75, 192, 200, 0.85) !important;
         color: white !important;
-        border-radius: 16px !important;
-        padding: 18px 24px !important;
-        font-size: 18px !important;
+        border-radius: 20px !important;
+        padding: 24px 30px !important;
+        font-size: 20px !important;
         font-weight: 700 !important;
-        border: none !important;
-        box-shadow: 0 6px 20px rgba(75, 192, 200, 0.4) !important;
+        border: 2px solid rgba(75, 192, 200, 0.5) !important;
+        box-shadow: 0 8px 25px rgba(75, 192, 200, 0.25) !important;
         transition: all 0.2s ease-in-out;
         width: 100%;
     }
     
     .stButton > button:hover {
-        background-color: #3aaab2 !important;
-        box-shadow: 0 8px 25px rgba(75, 192, 200, 0.6) !important;
+        background-color: rgba(75, 192, 200, 1) !important;
+        box-shadow: 0 10px 30px rgba(75, 192, 200, 0.4) !important;
         transform: translateY(-2px);
     }
-
-    /* Sekundäre / Zurück-Buttons etwas dezenter, aber auch schön abgerundet */
-    button[kind="secondary"] {
-        background-color: #F0F4F8 !important;
-        color: #2D3748 !important;
-        border: 2px solid #CBD5E0 !important;
-        box-shadow: none !important;
-    }
     
-    /* Eingabefelder extrem weich abgerundet */
+    /* Eingabefelder weich abgerundet */
     .stTextInput input {
         border-radius: 16px !important;
         border: 2px solid #CBD5E0 !important;
@@ -61,18 +53,6 @@ st.markdown("""
         background-color: #FAFCFF !important;
     }
 
-    /* Top-Bar im einheitlichen Look */
-    .top-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px 25px;
-        background: #F8FAFC;
-        border-radius: 16px;
-        margin-bottom: 30px;
-        border: 1px solid #EDF2F7;
-    }
-    
     /* Raum-Badge */
     .room-badge {
         background-color: #4BC0C8;
@@ -88,10 +68,10 @@ st.markdown("""
 
 # Hilfsfunktion zum sicheren Laden deines Logos
 def render_logo(width=80):
-    if os.path.exists("ClassWorkAILogo.png"):
-        st.image("ClassWorkAILogo.png", width=width)
+    if os.path.exists("ClassWorkAILogo.jpeg"):
+        st.image("ClassWorkAILogo.jpeg", width=width)
     else:
-        st.markdown(f"<h3 style='margin:0;'>🦉</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='margin:0;'>🏫</h3>", unsafe_allow_html=True)
 
 # Navigation via Session State
 if "page" not in st.session_state:
@@ -108,20 +88,20 @@ def navigate_to(page_name):
 # 1. STARTBILDSCHIRM (HOME)
 # ==========================================
 if st.session_state.page == "home":
-    _, center_col, _ = st.columns([1, 2.2, 1])
+    _, center_col, _ = st.columns([1, 2.5, 1])
     
     with center_col:
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # Logo zentriert (Groß und sauber)
-        cols_logo = st.columns([1, 1.2, 1])
-        with cols_logo[1]:
-            render_logo(width=130)
+        # Logo zentriert direkt über der Schrift
+        logo_c1, logo_c2, logo_c3 = st.columns([1, 1, 1])
+        with logo_c2:
+            render_logo(width=140)
             
-        st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 38px; margin-top: 10px;'>ClassWork AI</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 40px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 42px; margin-top: 15px;'>ClassWork AI</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 50px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-        # Große, präzise Haupt-Buttons nebeneinander
+        # Große, transparente Petrol-Buttons nebeneinander
         btn_col1, btn_col2 = st.columns(2)
         
         with btn_col1:
@@ -142,7 +122,6 @@ if st.session_state.page == "home":
 # 2. SCHÜLER-ANSICHT (RAUM BEITRETEN)
 # ==========================================
 elif st.session_state.page == "student_join":
-    # Einheitliche Top-Leiste mit Logo statt Eulen-Emoji
     col_t1, col_t2, col_t3 = st.columns([1, 8, 2])
     with col_t1:
         render_logo(width=50)
@@ -178,7 +157,6 @@ elif st.session_state.page == "student_join":
 # 3. LEHRER-DASHBOARD (KLASSENÜBERSICHT)
 # ==========================================
 elif st.session_state.page == "teacher_dashboard":
-    # Top-Leiste mit Logo & Raum-Badge
     col_t1, col_t2, col_t3, col_t4 = st.columns([0.8, 5.2, 2, 2])
     with col_t1:
         render_logo(width=50)
@@ -303,29 +281,4 @@ elif st.session_state.page == "teacher_settings":
         st.markdown("#### 👤 Profil & Account")
         st.write("Eingeloggt als: **Lehrer Max M.** (Schule Musterstadt)")
         if st.button("Profil bearbeiten", key="edit_profile"):
-            st.toast("Profil-Bearbeitung geöffnet.")
-            
-    with st.container(border=True):
-        st.markdown("#### 🛠️ Systemeinstellungen")
-        st.write("**Meldungs-Typen (🟢🔴🟡):** Aktiv")
-        st.write("**Benachrichtigungen:** Push-Hinweise bei starker Ablenkung")
-        st.markdown("---")
-        st.markdown("**Geräte-Verwaltung:**")
-        st.checkbox("Schülermodus automatisch erzwingen", value=True)
-        st.checkbox("Strenger Datenschutz-Check aktiv", value=True)
-        
-    with st.container(border=True):
-        st.markdown("#### 🔒 Datenschutz Regelungen")
-        st.write("Umfassende Datenschutz-Garantie: Lokale Analyse, keine Bildschirminhalte.")
-        st.success("DSGVO Audit: Bestätigt 🟢")
-        if st.button("Umfassende Regelungen ansehen", key="privacy_btn"):
-            st.info("Das System verarbeitet keinerlei Videostreams oder persönliche Inhalte extern.")
-            
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    if st.button("🚪 Logout / Abmelden"):
-        navigate_to("home")
-        st.rerun()
-        
-    st.markdown("<br><hr>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 12px;'>ClassWork AI v1.0 | DSGVO Audit Status: Erfolgreich</p>", unsafe_allow_html=True)
+            st
