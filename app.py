@@ -88,8 +88,8 @@ st.markdown("""
 
 # Hilfsfunktion zum sicheren Laden deines Logos
 def render_logo(width=80):
-    if os.path.exists("ClassWorkAILogo.jpeg"):
-        st.image("ClassWorkAILogo.jpeg", width=width)
+    if os.path.exists("ClassWorkAILogo.png"):
+        st.image("ClassWorkAILogo.png", width=width)
     else:
         st.markdown(f"<h3 style='margin:0;'>🦉</h3>", unsafe_allow_html=True)
 
