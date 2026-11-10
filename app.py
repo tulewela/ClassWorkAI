@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Custom CSS: Exakte Trennung zwischen Startbildschirm (riesig & farbig) und Rest (normal)
+# 2. Präzises Custom CSS für die riesigen Startbildschirm-Buttons
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -25,8 +25,8 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* NUR AUF DEM STARTBILDSCHIRM: Riesige, quadratische, gleichgroße Buttons in #7AC4C3 mit fetter weißer Schrift */
-    .home-buttons div.stButton > button {
+    /* RIESIGE, GLEICHGROSSE, QUADRATISCHE STARTSEITEN-BUTTONS (#7AC4C3) */
+    div.row-widget.stButton button {
         background-color: #7AC4C3 !important;
         color: #FFFFFF !important;
         border-radius: 28px !important;
@@ -36,25 +36,14 @@ st.markdown("""
         border: 4px solid #3B9392 !important;
         box-shadow: 0 15px 35px rgba(122, 196, 195, 0.4) !important;
         transition: all 0.2s ease-in-out;
-        width: 100%;
+        width: 100% !important;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        line-height: 1.3;
     }
     
-    .home-buttons div.stButton > button:hover {
+    div.row-widget.stButton button:hover {
         background-color: #65B3B2 !important;
         border-color: #287271 !important;
         transform: translateY(-2px);
-    }
-    
-    /* Alle anderen Buttons auf den Unterseiten (normal groß) */
-    div.stButton > button {
-        border-radius: 14px;
-        font-weight: 600;
     }
     
     /* Eingabefelder weich abgerundet */
@@ -98,7 +87,7 @@ def navigate_to(page_name):
 
 
 # ==========================================
-# 1. STARTBILDSCHIRM (HOME) - Exakt nach Skizze
+# 1. STARTBILDSCHIRM (HOME)
 # ==========================================
 if st.session_state.page == "home":
     # Oben links: Das Logo
@@ -110,9 +99,8 @@ if st.session_state.page == "home":
     st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 46px; margin-top: -30px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 25px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-    # Zentrierte, riesige, quadratische Buttons nebeneinander im speziellen Container
-    st.markdown('<div class="home-buttons">', unsafe_allow_html=True)
-    _, btn_container, _ = st.columns([0.2, 9.6, 0.2])
+    # Zentrierte, riesige, quadratische Buttons nebeneinander
+    _, btn_container, _ = st.columns([0.5, 9, 0.5])
     with btn_container:
         btn_col1, btn_col2 = st.columns(2)
         
@@ -125,10 +113,9 @@ if st.session_state.page == "home":
             if st.button("Als Schüler\nRaum beitreten", key="join_btn"):
                 navigate_to("student_join")
                 st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # Footer ganz unten im Viewport
-    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 13px;'>KI-Analyse im Hintergrund, ohne Video</p>", unsafe_allow_html=True)
 
 
