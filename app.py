@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Dejates exaktes, final freigegebenes Layout-CSS (Unangetastet!)
+# 2. Dejates exaktes Layout-CSS (Startbildschirm-Buttons groß, quadratisch, #7AC4C3, Rest normal)
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -86,7 +86,7 @@ def render_logo(width=80):
     else:
         st.markdown(f"<h3 style='margin:0;'>Logo fehlt (ClassWorkAILogo.png hochladen)</h3>", unsafe_allow_html=True)
 
-# Session State Initialisierung für Raum & Schüler
+# Session State Initialisierung
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
@@ -96,12 +96,15 @@ if "room_code" not in st.session_state:
 if "connected_students" not in st.session_state:
     st.session_state.connected_students = []
 
+if "confirm_close_room" not in st.session_state:
+    st.session_state.confirm_close_room = False
+
 def navigate_to(page_name):
     st.session_state.page = page_name
 
 
 # ==========================================
-# 1. STARTBILDSCHIRM (HOME) - Exakt im Wunschdesign
+# 1. STARTBILDSCHIRM (HOME) - Exakt nach Wunschlayout
 # ==========================================
 if st.session_state.page == "home":
     top_left_col, _ = st.columns([1, 11])
@@ -121,6 +124,7 @@ if st.session_state.page == "home":
                 if not st.session_state.room_code:
                     st.session_state.room_code = str(random.randint(100000, 999999))
                     st.session_state.connected_students = []
+                st.session_state.confirm_close_room = False
                 navigate_to("teacher_dashboard")
                 st.rerun()
                 
@@ -182,7 +186,7 @@ elif st.session_state.page == "student_join":
 # 3. LEHRER-DASHBOARD (KLASSENÜBERSICHT)
 # ==========================================
 elif st.session_state.page == "teacher_dashboard":
-    col_t1, col_t2, col_t3, col_t4 = st.columns([0.8, 5.2, 2, 2])
+    col_t1, col_t2, col_t3, col_t4, col_t5 = st.columns([0.8, 3.8, 2, 1.8, 1.6])
     with col_t1:
         render_logo(width=50)
     with col_t2:
@@ -194,10 +198,34 @@ elif st.session_state.page == "teacher_dashboard":
     with col_t4:
         display_code = st.session_state.room_code if st.session_state.room_code else "------"
         st.markdown(f"<div style='text-align: right;'><span class='room-badge'>Raum: {display_code}</span></div>", unsafe_allow_html=True)
-        
+    with col_t5:
+        if st.button("Raum schließen", key="close_room_init"):
+            st.session_state.confirm_close_room = True
+            st.rerun()
+            
     st.markdown("---")
     
-    if not st.session_state.connected_students:
+    # Sicherheitsabfrage für Raum schließen
+    if st.session_state.confirm_close_room:
+        with st.container(border=True):
+            st.warning("⚠️ **Raum wirklich schließen?** Alle verbundenen Schüler werden getrennt.")
+            col_ja, col_nein, _ = st.columns([1, 1, 3])
+            with col_ja:
+                if st.button("Ja", key="close_yes"):
+                    st.session_state.room_code = None
+                    st.session_state.connected_students = []
+                    st.session_state.confirm_close_room = False
+                    navigate_to("home")
+                    st.rerun()
+            with col_nein:
+                if st.button("Nein", key="close_no"):
+                    st.session_state.confirm_close_room = False
+                    st.rerun()
+        st.markdown("<br>", unsafe_allow_html=True)
+
+    if not st.session_state.room_code:
+        st.info("Es ist aktuell kein Raum aktiv. Kehre zum Startbildschirm zurück und hoste einen neuen Raum.")
+    elif not st.session_state.connected_students:
         st.info(f"Der Raum `{display_code}` ist aktuell noch leer. Teile den 6-stelligen Code mit deinen Schülerinnen und Schülern, damit sie beitreten können.")
     else:
         st.subheader(f"Verbundene Schüler ({len(st.session_state.connected_students)})")
