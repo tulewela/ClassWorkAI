@@ -10,15 +10,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Custom CSS (Dein exaktes Wunsch-Layout bleibt unangetastet!)
+# 2. Dejates exaktes, final freigegebenes Layout-CSS (Unangetastet!)
 st.markdown("""
     <style>
+    /* Allgemeine Hintergründe & Schrift */
     .stApp {
         background-color: #FFFFFF;
         font-family: 'Poppins', 'Roboto', sans-serif;
         color: #2D3748;
     }
     
+    /* Streamlit Standard-Elemente ausblenden */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -49,11 +51,13 @@ st.markdown("""
         transform: translateY(-2px);
     }
     
+    /* Alle anderen Buttons auf den Unterseiten (normal groß) */
     div.stButton > button {
         border-radius: 14px;
         font-weight: 600;
     }
     
+    /* Eingabefelder weich abgerundet */
     .stTextInput input {
         border-radius: 16px !important;
         border: 2px solid #CBD5E0 !important;
@@ -62,6 +66,7 @@ st.markdown("""
         background-color: #FAFCFF !important;
     }
 
+    /* Raum-Badge */
     .room-badge {
         background-color: #7AC4C3;
         color: white;
@@ -96,7 +101,7 @@ def navigate_to(page_name):
 
 
 # ==========================================
-# 1. STARTBILDSCHIRM (HOME)
+# 1. STARTBILDSCHIRM (HOME) - Exakt im Wunschdesign
 # ==========================================
 if st.session_state.page == "home":
     top_left_col, _ = st.columns([1, 11])
@@ -113,10 +118,9 @@ if st.session_state.page == "home":
         
         with btn_col1:
             if st.button("Als Lehrer\nRaum hosten", key="host_btn"):
-                # Generiere einen zufälligen 6-stelligen Code, falls noch keiner da ist
                 if not st.session_state.room_code:
                     st.session_state.room_code = str(random.randint(100000, 999999))
-                    st.session_state.connected_students = [] # Startet leer!
+                    st.session_state.connected_students = []
                 navigate_to("teacher_dashboard")
                 st.rerun()
                 
@@ -160,13 +164,13 @@ elif st.session_state.page == "student_join":
                 if st.session_state.room_code and entered_code == st.session_state.room_code:
                     if student_name and student_name not in st.session_state.connected_students:
                         st.session_state.connected_students.append(student_name)
-                        st.success(f"Erfolgreich mit Raum {entered_Code} verbunden!")
+                        st.success(f"Erfolgreich mit Raum {entered_code} verbunden!")
                     elif not student_name:
                         st.warning("Bitte gib deinen Namen ein.")
                     else:
                         st.info("Du bist bereits mit diesem Raum verbunden.")
                 elif entered_code != st.session_state.room_code:
-                    st.error("Falscher Raum-Code oder kein Raum aktiv. (Tipp: Lass dir vom Lehrer den Code geben)")
+                    st.error("Falscher Raum-Code oder kein Raum aktiv.")
                 else:
                     st.warning("Bitte gib den 6-stelligen Raum-Code ein.")
                     
@@ -193,7 +197,6 @@ elif st.session_state.page == "teacher_dashboard":
         
     st.markdown("---")
     
-    # Zeige dynamisch die verbundenen Schüler an (startet leer, wenn noch niemand beigetreten ist)
     if not st.session_state.connected_students:
         st.info(f"Der Raum `{display_code}` ist aktuell noch leer. Teile den 6-stelligen Code mit deinen Schülerinnen und Schülern, damit sie beitreten können.")
     else:
