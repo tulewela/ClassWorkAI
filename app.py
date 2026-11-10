@@ -2,7 +2,7 @@ import streamlit as st
 from PIL import Image
 import os
 
-# 1. Seitengestaltung & Fix gegen jegliches Scrollen
+# 1. Seitengestaltung & Fix gegen Scrollen auf Startseite
 st.set_page_config(
     page_title="ClassWork AI",
     page_icon="🏫",
@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Custom CSS: Kompakter Viewport, riesige quadratische Buttons (#7AC4C3), Logo links
+# 2. Custom CSS: Nur Startbildschirm-Buttons riesig, quadratisch, #7AC4C3, Rest normal
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -18,28 +18,20 @@ st.markdown("""
         background-color: #FFFFFF;
         font-family: 'Poppins', 'Roboto', sans-serif;
         color: #2D3748;
-        overflow: hidden !important;
     }
     
-    /* Streamlit Standard-Elemente komplett ausblenden */
+    /* Streamlit Standard-Elemente ausblenden */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* ERZWUNGENER KEIN-SCROLL-VIEWPORT */
-    .main .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
-        max-width: 100% !important;
-    }
-    
-    /* RIESIGE, GLEICHGROSSE, QUADRATISCHE BUTTONS (#7AC4C3) */
-    div.stButton > button {
+    /* NUR DIE STARTBILDSCHIRM BUTTONS: Riesig, quadratisch, gleich groß, #7AC4C3, fette weiße Schrift */
+    .home-container div.stButton > button {
         background-color: #7AC4C3 !important;
         color: #FFFFFF !important;
         border-radius: 28px !important;
-        height: 320px !important;
-        font-size: 32px !important;
+        height: 300px !important;
+        font-size: 30px !important;
         font-weight: 800 !important;
         border: 4px solid #3B9392 !important;
         box-shadow: 0 15px 35px rgba(122, 196, 195, 0.4) !important;
@@ -53,10 +45,16 @@ st.markdown("""
         line-height: 1.3;
     }
     
-    div.stButton > button:hover {
+    .home-container div.stButton > button:hover {
         background-color: #65B3B2 !important;
         border-color: #287271 !important;
         transform: translateY(-2px);
+    }
+    
+    /* Alle anderen Buttons in der App (normal groß) */
+    div.stButton > button {
+        border-radius: 14px;
+        font-weight: 600;
     }
     
     /* Eingabefelder weich abgerundet */
@@ -103,7 +101,9 @@ def navigate_to(page_name):
 # 1. STARTBILDSCHIRM (HOME) - Exakt nach Skizze
 # ==========================================
 if st.session_state.page == "home":
-    # Oben links: Das Logo (etwas größer wie gewünscht)
+    st.markdown('<div class="home-container">', unsafe_allow_html=True)
+    
+    # Oben links: Das Logo
     top_left_col, _ = st.columns([1, 11])
     with top_left_col:
         render_logo(width=90)
@@ -112,7 +112,7 @@ if st.session_state.page == "home":
     st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 46px; margin-top: -30px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 25px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-    # Zentrierte, riesige, quadratische Buttons nebeneinander (exakt wie auf deiner Zeichnung)
+    # Zentrierte, riesige, quadratische Buttons nebeneinander
     _, btn_container, _ = st.columns([0.2, 9.6, 0.2])
     with btn_container:
         btn_col1, btn_col2 = st.columns(2)
@@ -130,6 +130,8 @@ if st.session_state.page == "home":
     # Footer ganz unten im Viewport
     st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 13px;'>KI-Analyse im Hintergrund, ohne Video</p>", unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ==========================================
@@ -320,4 +322,4 @@ elif st.session_state.page == "teacher_settings":
         st.rerun()
         
     st.markdown("<br><hr>", unsafe_allow_html=True)
-    st.markdown("<p style='
+    st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 12px;'>ClassWork AI v1.0 | DSGVO Audit Status: Erfolgreich</p>", unsafe_allow_html=True)
