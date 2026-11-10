@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Präzises Custom CSS für die riesigen Startbildschirm-Buttons
+# 2. Custom CSS für den perfekten Startbildschirm & normale Unterseiten
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -25,25 +25,45 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* RIESIGE, GLEICHGROSSE, QUADRATISCHE STARTSEITEN-BUTTONS (#7AC4C3) */
-    div.row-widget.stButton button {
+    /* ECHTE GROSSE QUADRATISCHE BUTTONS FÜR DEN STARTBILDSCHIRM (HTML-basiert) */
+    .home-btn-container {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 30px;
+    }
+    
+    .home-custom-btn {
         background-color: #7AC4C3 !important;
         color: #FFFFFF !important;
         border-radius: 28px !important;
+        width: 320px !important;
         height: 280px !important;
         font-size: 28px !important;
         font-weight: 800 !important;
         border: 4px solid #3B9392 !important;
         box-shadow: 0 15px 35px rgba(122, 196, 195, 0.4) !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        text-decoration: none !important;
         transition: all 0.2s ease-in-out;
-        width: 100% !important;
+        line-height: 1.4;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
     
-    div.row-widget.stButton button:hover {
+    .home-custom-btn:hover {
         background-color: #65B3B2 !important;
         border-color: #287271 !important;
-        transform: translateY(-2px);
+        transform: translateY(-3px);
+        color: #FFFFFF !important;
+    }
+    
+    /* Normale Buttons auf den Unterseiten */
+    div.stButton > button {
+        border-radius: 14px;
+        font-weight: 600;
     }
     
     /* Eingabefelder weich abgerundet */
@@ -75,7 +95,11 @@ def render_logo(width=80):
     else:
         st.markdown(f"<h3 style='margin:0;'>Logo fehlt (ClassWorkAILogo.png hochladen)</h3>", unsafe_allow_html=True)
 
-# Navigation via Session State
+# Navigation via Query Parameters oder Session State abfangen
+query_params = st.query_params
+if "nav" in query_params:
+    st.session_state.page = query_params["nav"]
+
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
@@ -84,10 +108,12 @@ if "selected_student" not in st.session_state:
 
 def navigate_to(page_name):
     st.session_state.page = page_name
+    st.query_params["nav"] = page_name
+    st.rerun()
 
 
 # ==========================================
-# 1. STARTBILDSCHIRM (HOME)
+# 1. STARTBILDSCHIRM (HOME) - Exakt nach deiner Zeichnung
 # ==========================================
 if st.session_state.page == "home":
     # Oben links: Das Logo
@@ -95,27 +121,20 @@ if st.session_state.page == "home":
     with top_left_col:
         render_logo(width=90)
 
-    # Titel und Untertitel ganz oben zentriert
-    st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 46px; margin-top: -30px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 25px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
+    # Titel und Untertitel ganz oben zentriert (direkt unter dem Logo-Bereich)
+    st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 46px; margin-top: -40px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 30px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-    # Zentrierte, riesige, quadratische Buttons nebeneinander
-    _, btn_container, _ = st.columns([0.5, 9, 0.5])
-    with btn_container:
-        btn_col1, btn_col2 = st.columns(2)
-        
-        with btn_col1:
-            if st.button("Als Lehrer\nRaum hosten", key="host_btn"):
-                navigate_to("teacher_dashboard")
-                st.rerun()
-                
-        with btn_col2:
-            if st.button("Als Schüler\nRaum beitreten", key="join_btn"):
-                navigate_to("student_join")
-                st.rerun()
+    # Die beiden riesigen, quadratischen, gleich großen Buttons in der Mitte als HTML-Buttons
+    st.markdown("""
+        <div class="home-btn-container">
+            <a href="?nav=teacher_dashboard" class="home-custom-btn">Als Lehrer<br>Raum hosten</a>
+            <a href="?nav=student_join" class="home-custom-btn">Als Schüler<br>Raum beitreten</a>
+        </div>
+    """, unsafe_allow_html=True)
 
     # Footer ganz unten im Viewport
-    st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 35px;'></div>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 13px;'>KI-Analyse im Hintergrund, ohne Video</p>", unsafe_allow_html=True)
 
 
@@ -131,7 +150,6 @@ elif st.session_state.page == "student_join":
     with col_t3:
         if st.button("🏠 Home", key="home_btn_1"):
             navigate_to("home")
-            st.rerun()
             
     st.markdown("---")
     
@@ -166,7 +184,6 @@ elif st.session_state.page == "teacher_dashboard":
     with col_t3:
         if st.button("⚙️ Einstellungen", key="settings_btn"):
             navigate_to("teacher_settings")
-            st.rerun()
     with col_t4:
         st.markdown("<div style='text-align: right;'><span class='room-badge'>Raum: 482 915</span></div>", unsafe_allow_html=True)
         
@@ -211,7 +228,6 @@ elif st.session_state.page == "teacher_dashboard":
                         if st.button("Details", key=f"btn_{i}"):
                             st.session_state.selected_student = "Anna S."
                             navigate_to("student_detail")
-                            st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
@@ -225,7 +241,6 @@ elif st.session_state.page == "student_detail":
     with col_t1:
         if st.button("⬅️ Zurück zum Dashboard", key="back_dash"):
             navigate_to("teacher_dashboard")
-            st.rerun()
     with col_t2:
         st.empty()
     with col_t3:
@@ -269,11 +284,9 @@ elif st.session_state.page == "teacher_settings":
     with col_t1:
         if st.button("⬅️ Zurück zum Dashboard", key="back_dash_2"):
             navigate_to("teacher_dashboard")
-            st.rerun()
     with col_t2:
         if st.button("🏠 Home", key="home_btn_2"):
             navigate_to("home")
-            st.rerun()
             
     st.markdown("### ⚙️ ClassWork AI: Einstellungen")
     st.markdown("---")
@@ -304,7 +317,6 @@ elif st.session_state.page == "teacher_settings":
     
     if st.button("🚪 Logout / Abmelden", key="logout_btn"):
         navigate_to("home")
-        st.rerun()
         
     st.markdown("<br><hr>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 12px;'>ClassWork AI v1.0 | DSGVO Audit Status: Erfolgreich</p>", unsafe_allow_html=True)
