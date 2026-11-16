@@ -95,15 +95,20 @@ def render_logo(width=80):
     else:
         st.markdown(f"<h3 style='margin:0;'>Logo fehlt (ClassWorkAILogo.png hochladen)</h3>", unsafe_allow_html=True)
 
+# GEMEINSAMER SERVER-SPEICHER für Räume über alle Tabs hinweg
+@st.cache_resource
+def get_shared_rooms():
+    # Struktur: { room_code: [student_name_1, student_name_2, ...] }
+    return {}
+
+shared_rooms = get_shared_rooms()
+
 # Session State Initialisierung
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
-if "room_code" not in st.session_state:
-    st.session_state.room_code = None
-
-if "connected_students" not in st.session_state:
-    st.session_state.connected_students = []
+if "teacher_room_code" not in st.session_state:
+    st.session_state.teacher_room_code = None
 
 if "confirm_close" not in st.session_state:
     st.session_state.confirm_close = False
@@ -117,9 +122,14 @@ if "nav" in query_params:
     st.session_state.page = query_params["nav"]
 
 if "action" in query_params and query_params["action"] == "host":
-    if not st.session_state.room_code:
-        st.session_state.room_code = str(random.randint(100000, 999999))
-        st.session_state.connected_students = []
+    # Einen neuen Raum global anlegen, falls noch keiner für diesen Lehrer-Tab existiert
+    if not st.session_state.teacher_room_code or st.session_state.teacher_room_code not in shared_rooms:
+        new_code = str(random.randint(100000, 999999))
+        while new_code in shared_rooms:
+            new_code = str(random.randint(100000, 999999))
+        shared_rooms[new_code] = []
+        st.session_state.teacher_room_code = new_code
+    
     st.session_state.confirm_close = False
     st.session_state.page = "teacher_dashboard"
     if "action" in st.query_params:
@@ -180,22 +190,20 @@ elif st.session_state.page == "student_join":
             
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("Raum beitreten", key="submit_join"):
-                current_room = str(st.session_state.room_code).strip() if st.session_state.room_code else ""
                 user_code = entered_code.strip()
                 clean_name = student_name.strip()
                 
-                if current_room and user_code == current_room:
-                    if clean_name and clean_name not in st.session_state.connected_students:
-                        st.session_state.connected_students.append(clean_name)
+                if user_code in shared_rooms:
+                    if clean_name:
+                        if clean_name not in shared_rooms[user_code]:
+                            shared_rooms[user_code].append(clean_name)
                         st.success(f"Erfolgreich mit Raum {user_code} verbunden!")
-                    elif not clean_name:
-                        st.warning("Bitte gib deinen Namen ein.")
                     else:
-                        st.info("Du bist bereits mit diesem Raum verbunden.")
-                elif not current_room:
-                    st.error("Es ist aktuell kein Raum aktiv. Der Lehrer muss zuerst einen Raum hosten.")
+                        st.warning("Bitte gib deinen Namen ein.")
+                elif not user_code:
+                    st.warning("Bitte gib den 6-stelligen Raum-Code ein.")
                 else:
-                    st.error("Falscher Raum-Code. Bitte überprüfe den Code.")
+                    st.error("Falscher Raum-Code. Es ist kein aktiver Raum mit diesem Code gefunden worden.")
                     
         st.markdown("<br>", unsafe_allow_html=True)
         st.info("🔒 **Deine Privatsphäre ist geschützt.** Der Lehrer sieht keine Bildschirminhalte.")
@@ -205,8 +213,15 @@ elif st.session_state.page == "student_join":
 # 3. LEHRER-DASHBOARD (KLASSENÜBERSICHT)
 # ==========================================
 elif st.session_state.page == "teacher_dashboard":
-    if not st.session_state.room_code:
-        st.session_state.room_code = str(random.randint(100000, 999999))
+    # Sicherstellen, dass der Lehrer einen aktiven Raum im globalen Speicher hat
+    if not st.session_state.teacher_room_code or st.session_state.teacher_room_code not in shared_rooms:
+        new_code = str(random.randint(100000, 999999))
+        while new_code in shared_rooms:
+            new_code = str(random.randint(100000, 999999))
+        shared_rooms[new_code] = []
+        st.session_state.teacher_room_code = new_code
+
+    display_code = st.session_state.teacher_room_code
 
     col_t1, col_t2, col_t3, col_t4, col_t5 = st.columns([0.8, 3.8, 2, 1.8, 1.6])
     with col_t1:
@@ -217,7 +232,6 @@ elif st.session_state.page == "teacher_dashboard":
         if st.button("⚙️ Einstellungen", key="settings_btn"):
             navigate_to("teacher_settings")
     with col_t4:
-        display_code = st.session_state.room_code
         st.markdown(f"<div style='text-align: right;'><span class='room-badge'>Raum: {display_code}</span></div>", unsafe_allow_html=True)
     with col_t5:
         if st.button("Raum schließen", key="close_room_btn"):
@@ -233,8 +247,9 @@ elif st.session_state.page == "teacher_dashboard":
             c_ja, c_nein, _ = st.columns([1, 1, 3])
             with c_ja:
                 if st.button("Ja", key="yes_close"):
-                    st.session_state.room_code = None
-                    st.session_state.connected_students = []
+                    if display_code in shared_rooms:
+                        del shared_rooms[display_code]
+                    st.session_state.teacher_room_code = None
                     st.session_state.confirm_close = False
                     navigate_to("home")
             with c_nein:
@@ -243,11 +258,13 @@ elif st.session_state.page == "teacher_dashboard":
                     st.rerun()
         st.markdown("<br>", unsafe_allow_html=True)
 
-    if not st.session_state.connected_students:
+    connected_students = shared_rooms.get(display_code, [])
+
+    if not connected_students:
         st.info(f"Der Raum `{display_code}` ist aktuell noch leer. Teile den 6-stelligen Code mit deinen Schülerinnen und Schülern, damit sie beitreten können.")
     else:
-        st.subheader(f"Verbundene Schüler ({len(st.session_state.connected_students)})")
-        students = [{"name": name, "status": "green", "time": "Gerade eben"} for name in st.session_state.connected_students]
+        st.subheader(f"Verbundene Schüler ({len(connected_students)})")
+        students = [{"name": name, "status": "green", "time": "Gerade eben"} for name in connected_students]
         
         row1_cols = st.columns(3)
         row2_cols = st.columns(3)
@@ -279,3 +296,89 @@ elif st.session_state.page == "teacher_dashboard":
 
 # ==========================================
 # 4. SCHÜLER-DETAILANSICHT (HISTORIE)
+# ==========================================
+elif st.session_state.page == "student_detail":
+    col_t1, col_t2, col_t3 = st.columns([6, 2, 2])
+    with col_t1:
+        if st.button("⬅️ Zurück zum Dashboard", key="back_dash"):
+            navigate_to("teacher_dashboard")
+    with col_t2:
+        st.empty()
+    with col_t3:
+        display_code = st.session_state.teacher_room_code if st.session_state.teacher_room_code else "------"
+        st.markdown(f"<div style='text-align: right;'><span class='room-badge'>Raum: {display_code}</span></div>", unsafe_allow_html=True)
+        
+    st.markdown(f"### {st.session_state.selected_student} - Historie (Detaillierte Liste)")
+    st.markdown("---")
+    
+    history_data = [
+        ("09:42:30", "green", "Unterrichtsrelevant", "Dauer: 4 Min. 15 Sek. (Anhaltend)"),
+        ("09:38:15", "red", "Ablenkung", "Dauer: 3 Min. 20 Sek."),
+        ("09:30:00", "red", "Ablenkung", "Dauer: 3 Min. 0 Sek."),
+        ("09:25:40", "red", "Ablenkung", "Dauer: 5 Min. 0 Sek."),
+        ("09:20:00", "red", "Ablenkung", "Dauer: 5 Min. 0 Sek."),
+        ("09:15:30", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek."),
+        ("09:10:00", "yellow", "Unsicher", "Dauer: 5 Min. 0 Sek."),
+        ("09:05:00", "red", "Ablenkung", "Dauer: 4 Min. 30 Sek."),
+        ("09:00:00", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek.")
+    ]
+    
+    for time_stamp, status_color, status_text, duration in history_data:
+        dot = "🟢" if status_color == "green" else ("🔴" if status_color == "red" else "🟡")
+        
+        with st.container(border=True):
+            col_h1, col_h2 = st.columns([1, 6])
+            with col_h1:
+                st.markdown(f"**{time_stamp}**")
+            with col_h2:
+                st.markdown(f"{dot} **{status_text}**")
+                st.caption(duration)
+                
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
+
+
+# ==========================================
+# 5. LEHRER-EINSTELLUNGEN
+# ==========================================
+elif st.session_state.page == "teacher_settings":
+    col_t1, col_t2 = st.columns([8, 2])
+    with col_t1:
+        if st.button("⬅️ Zurück zum Dashboard", key="back_dash_2"):
+            navigate_to("teacher_dashboard")
+    with col_t2:
+        if st.button("🏠 Home", key="home_btn_2"):
+            navigate_to("home")
+            
+    st.markdown("### ⚙️ ClassWork AI: Einstellungen")
+    st.markdown("---")
+    
+    with st.container(border=True):
+        st.markdown("#### 👤 Profil & Account")
+        st.write("Eingeloggt als: **Lehrer Max M.** (Schule Musterstadt)")
+        if st.button("Profil bearbeiten", key="edit_profile"):
+            st.toast("Profil-Bearbeitung geöffnet.")
+            
+    with st.container(border=True):
+        st.markdown("#### 🛠️ Systemeinstellungen")
+        st.write("**Meldungs-Typen (🟢🔴🟡):** Aktiv")
+        st.write("**Benachrichtigungen:** Push-Hinweise bei starker Ablenkung")
+        st.markdown("---")
+        st.markdown("**Geräte-Verwaltung:**")
+        st.checkbox("Schülermodus automatisch erzwingen", value=True)
+        st.checkbox("Strenger Datenschutz-Check aktiv", value=True)
+        
+    with st.container(border=True):
+        st.markdown("#### 🔒 Datenschutz Regelungen")
+        st.write("Umfassende Datenschutz-Garantie: Lokale Analyse, keine Bildschirminhalte.")
+        st.success("DSGVO Audit: Bestätigt 🟢")
+        if st.button("Umfassende Regelungen ansehen", key="privacy_btn"):
+            st.info("Das System verarbeitet keinerlei Videostreams oder persönliche Inhalte extern.")
+            
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    if st.button("🚪 Logout / Abmelden", key="logout_btn"):
+        navigate_to("home")
+        
+    st.markdown("<br><hr>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 12px;'>ClassWork AI v1.0 | DSGVO Audit Status: Erfolgreich</p>", unsafe_allow_html=True)
