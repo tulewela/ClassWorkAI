@@ -95,7 +95,11 @@ def render_logo(width=80):
     else:
         st.markdown(f"<h3 style='margin:0;'>Logo fehlt (ClassWorkAILogo.png hochladen)</h3>", unsafe_allow_html=True)
 
-# Session State Initialisierung für Raum, Schüler & Schließen-Abfrage
+# Navigation via Query Parameters oder Session State abfangen
+query_params = st.query_params
+if "nav" in query_params:
+    st.session_state.page = query_params["nav"]
+
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
@@ -130,10 +134,7 @@ if st.session_state.page == "home":
     st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 46px; margin-top: -40px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 30px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-    # Die beiden riesigen, quadratischen, gleich großen Buttons in der Mitte
-    # Wenn der Lehrer auf "Raum hosten" klickt, generieren wir hier den Code und wechseln die Seite.
-    # Da HTML-Links (<a href>) keinen Python-Code ausführen können, lösen wir das clever über einen Klick-Trigger oder Query-Parameter:
-    query_params = st.query_params
+    # Lehrer-Raum-Host Aktion abfangen
     if "action" in query_params and query_params["action"] == "host":
         if not st.session_state.room_code:
             st.session_state.room_code = str(random.randint(100000, 999999))
@@ -142,10 +143,11 @@ if st.session_state.page == "home":
         del st.query_params["action"]
         navigate_to("teacher_dashboard")
 
+    # Die beiden riesigen, quadratischen, gleich großen Buttons in der Mitte (mit target="_self")
     st.markdown("""
         <div class="home-btn-container">
-            <a href="?nav=teacher_dashboard&action=host" class="home-custom-btn">Als Lehrer<br>Raum hosten</a>
-            <a href="?nav=student_join" class="home-custom-btn">Als Schüler<br>Raum beitreten</a>
+            <a href="?nav=teacher_dashboard&action=host" target="_self" class="home-custom-btn">Als Lehrer<br>Raum hosten</a>
+            <a href="?nav=student_join" target="_self" class="home-custom-btn">Als Schüler<br>Raum beitreten</a>
         </div>
     """, unsafe_allow_html=True)
 
@@ -201,7 +203,6 @@ elif st.session_state.page == "student_join":
 # 3. LEHRER-DASHBOARD (KLASSENÜBERSICHT)
 # ==========================================
 elif st.session_state.page == "teacher_dashboard":
-    # Falls der Lehrer über direkte Navigation kommt und noch keinen Code hat, generieren
     if not st.session_state.room_code:
         st.session_state.room_code = str(random.randint(100000, 999999))
 
