@@ -169,35 +169,34 @@ if "confirm_kick" not in st.session_state:
 if "selected_student" not in st.session_state:
     st.session_state.selected_student = "Anna S."
 
-# Query Parameters am Anfang abfangen & persistent machen (inkl. Schüler-Reclaim bei F5)
+# Query Parameters abfangen & sauber nach Rolle (Schüler vs. Lehrer) trennen
 query_params = st.query_params
 if "nav" in query_params:
     st.session_state.page = query_params["nav"]
 
-if "room" in query_params:
+# Exakte Erkennung bei Seiten-Reload (F5)
+if "student" in query_params and "room" in query_params:
+    s_name = query_params["student"]
+    r_code = query_params["room"]
+    st.session_state.student_joined_name = s_name
+    st.session_state.student_joined_room = r_code
+    st.session_state.page = "student_join"
+    if r_code not in shared_rooms:
+        shared_rooms[r_code] = {}
+    if s_name not in shared_rooms[r_code]:
+        shared_rooms[r_code][s_name] = {
+            "status": "green",
+            "status_text": "Unterrichtsrelevant",
+            "last_update": "Wieder verbunden",
+            "history": [
+                (datetime.now().strftime("%H:%M:%S"), "green", "Unterrichtsrelevant", "Sitzung wiederhergestellt")
+            ]
+        }
+elif "room" in query_params and "student" not in query_params:
     r_code = query_params["room"]
     st.session_state.teacher_room_code = r_code
     if r_code not in shared_rooms:
         shared_rooms[r_code] = {}
-
-if "student" in query_params:
-    s_name = query_params["student"]
-    st.session_state.student_joined_name = s_name
-    st.session_state.page = "student_join"
-    if "room" in query_params:
-        r_code = query_params["room"]
-        st.session_state.student_joined_room = r_code
-        if r_code not in shared_rooms:
-            shared_rooms[r_code] = {}
-        if s_name not in shared_rooms[r_code]:
-            shared_rooms[r_code][s_name] = {
-                "status": "green",
-                "status_text": "Unterrichtsrelevant",
-                "last_update": "Verbunden (F5)",
-                "history": [
-                    (datetime.now().strftime("%H:%M:%S"), "green", "Unterrichtsrelevant", "Seite neu geladen (Verbunden)")
-                ]
-            }
 
 if "action" in query_params and query_params["action"] == "host":
     if not st.session_state.teacher_room_code or st.session_state.teacher_room_code not in shared_rooms:
@@ -217,12 +216,15 @@ if "action" in query_params and query_params["action"] == "host":
 def navigate_to(page_name):
     st.session_state.page = page_name
     st.query_params["nav"] = page_name
-    if st.session_state.teacher_room_code:
-        st.query_params["room"] = st.session_state.teacher_room_code
-    if st.session_state.student_joined_room:
+    if page_name == "teacher_dashboard" or page_name == "student_detail" or page_name == "teacher_settings":
+        if st.session_state.teacher_room_code:
+            st.query_params["room"] = st.session_state.teacher_room_code
+        if "student" in st.query_params:
+            del st.query_params["student"]
+    elif page_name == "student_join" and st.session_state.student_joined_room:
         st.query_params["room"] = st.session_state.student_joined_room
-    if st.session_state.student_joined_name:
-        st.query_params["student"] = st.session_state.student_joined_name
+        if st.session_state.student_joined_name:
+            st.query_params["student"] = st.session_state.student_joined_name
     st.rerun()
 
 
@@ -385,6 +387,7 @@ elif st.session_state.page == "teacher_dashboard":
         st.session_state.teacher_room_code = new_code
 
     display_code = st.session_state.teacher_room_code
+    st.query_params["room"] = display_code
 
     col_t1, col_t2, col_t3, col_t4, col_t5 = st.columns([0.8, 3.8, 2, 1.8, 1.6])
     with col_t1:
@@ -497,15 +500,14 @@ elif st.session_state.page == "student_detail":
     sel_name = st.session_state.selected_student
     st.markdown(f"### {sel_name} - Aktivitäts-Historie")
     
-    # Button zum Rausschmeißen des Schülers
-    if st.button(f"🚫 {sel_name} aus dem Raum werfen", key="kick_student_init"):
-        st.session_state.confirm_kick = True
-        st.rerun()
-
-    # Sicherheitsabfrage für Schüler rausschmeißen (robust gelöst)
-    if st.session_state.confirm_kick:
+    # Button zum Rausschmeißen des Schülers mit sauberer Sicherheitsabfrage
+    if not st.session_state.confirm_kick:
+        if st.button(f"🚫 {sel_name} aus dem Raum werfen", key="kick_student_init"):
+            st.session_state.confirm_kick = True
+            st.rerun()
+    else:
         with st.container(border=True):
-            st.warning(f"⚠️ **Möchtest du {sel_name} wirklich aus dem Raum werfen?**")
+            st.warning(f"⚠️ **Möchtest du {sel_name} wirklich unwiderruflich aus dem Raum werfen?**")
             c_ja, c_nein, _ = st.columns([1, 1, 3])
             with c_ja:
                 if st.button("Ja, rausschmeißen", key="yes_kick"):
