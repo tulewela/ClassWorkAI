@@ -98,7 +98,6 @@ def render_logo(width=80):
 # GEMEINSAMER SERVER-SPEICHER für Räume über alle Tabs hinweg
 @st.cache_resource
 def get_shared_rooms():
-    # Struktur: { room_code: [student_name_1, student_name_2, ...] }
     return {}
 
 shared_rooms = get_shared_rooms()
@@ -122,7 +121,6 @@ if "nav" in query_params:
     st.session_state.page = query_params["nav"]
 
 if "action" in query_params and query_params["action"] == "host":
-    # Einen neuen Raum global anlegen, falls noch keiner für diesen Lehrer-Tab existiert
     if not st.session_state.teacher_room_code or st.session_state.teacher_room_code not in shared_rooms:
         new_code = str(random.randint(100000, 999999))
         while new_code in shared_rooms:
@@ -213,7 +211,6 @@ elif st.session_state.page == "student_join":
 # 3. LEHRER-DASHBOARD (KLASSENÜBERSICHT)
 # ==========================================
 elif st.session_state.page == "teacher_dashboard":
-    # Sicherstellen, dass der Lehrer einen aktiven Raum im globalen Speicher hat
     if not st.session_state.teacher_room_code or st.session_state.teacher_room_code not in shared_rooms:
         new_code = str(random.randint(100000, 999999))
         while new_code in shared_rooms:
@@ -264,31 +261,31 @@ elif st.session_state.page == "teacher_dashboard":
         st.info(f"Der Raum `{display_code}` ist aktuell noch leer. Teile den 6-stelligen Code mit deinen Schülerinnen und Schülern, damit sie beitreten können.")
     else:
         st.subheader(f"Verbundene Schüler ({len(connected_students)})")
-        students = [{"name": name, "status": "green", "time": "Gerade eben"} for name in connected_students]
         
-        row1_cols = st.columns(3)
-        row2_cols = st.columns(3)
-        all_cols = row1_cols + row2_cols
-        
-        for i, student in enumerate(students):
-            if i < len(all_cols):
-                with all_cols[i]:
-                    with st.container(border=True):
-                        c1, c2 = st.columns([4, 1])
-                        with c1:
-                            st.markdown(f"**{student['name']}**")
-                        with c2:
-                            st.markdown(f"<div style='text-align: right;'>🟢</div>", unsafe_allow_html=True)
-                        
-                        st.markdown("<div style='text-align: center; padding: 15px 0;'><span style='font-size: 36px;'>👤</span></div>", unsafe_allow_html=True)
-                        
-                        bc1, bc2 = st.columns([2, 2])
-                        with bc1:
-                            st.caption(student["time"])
-                        with bc2:
-                            if st.button("Details", key=f"btn_{i}"):
-                                st.session_state.selected_student = student["name"]
-                                navigate_to("student_detail")
+        # Zeige die beigetretenen Schüler in Reihen zu je 3 Karten an
+        for i in range(0, len(connected_students), 3):
+            cols = st.columns(3)
+            for j in range(3):
+                idx = i + j
+                if idx < len(connected_students):
+                    name = connected_students[idx]
+                    with cols[j]:
+                        with st.container(border=True):
+                            c1, c2 = st.columns([4, 1])
+                            with c1:
+                                st.markdown(f"**{name}**")
+                            with c2:
+                                st.markdown(f"<div style='text-align: right;'>🟢</div>", unsafe_allow_html=True)
+                            
+                            st.markdown("<div style='text-align: center; padding: 15px 0;'><span style='font-size: 36px;'>👤</span></div>", unsafe_allow_html=True)
+                            
+                            bc1, bc2 = st.columns([2, 2])
+                            with bc1:
+                                st.caption("Gerade eben")
+                            with bc2:
+                                if st.button("Details", key=f"btn_detail_{idx}"):
+                                    st.session_state.selected_student = name
+                                    navigate_to("student_detail")
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
