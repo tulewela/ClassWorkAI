@@ -1,6 +1,9 @@
 import streamlit as st
 import random
 import os
+from datetime import datetime
+from PIL import Image
+from transformers import pipeline
 
 # 1. Seitengestaltung & Fix gegen Scrollen auf Startseite
 st.set_page_config(
@@ -10,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# 2. Custom CSS für den perfekten Startbildschirm & normale Unterseiten (Dein Original-Layout)
+# 2. Custom CSS für den perfekten Startbildschirm & normale Unterseiten (Unangetastet!)
 st.markdown("""
     <style>
     /* Allgemeine Hintergründe & Schrift */
@@ -95,7 +98,63 @@ def render_logo(width=80):
     else:
         st.markdown(f"<h3 style='margin:0;'>Logo fehlt (ClassWorkAILogo.png hochladen)</h3>", unsafe_allow_html=True)
 
-# GEMEINSAMER SERVER-SPEICHER für Räume über alle Tabs hinweg
+# HUGGING FACE KI-MODELL LADEN (Einmalig gecacht für maximale Geschwindigkeit)
+@st.cache_resource
+def load_ai_classifier():
+    return pipeline("zero-shot-image-classification", model="openai/clip-vit-base-patch32")
+
+# Detaillierte KI-Klassifizierungs-Logik
+def classify_student_screen(image: Image.Image):
+    classifier = load_ai_classifier()
+    
+    # Sehr ausführliche Beschreibungen für höchste Erkennungsgenauigkeit
+    label_relevant = (
+        "digital school notes, handwritten tablet notes, Goodnotes, Notability, OneNote, "
+        "Microsoft Word document, Google Docs text editor, PowerPoint presentation slides, "
+        "PDF worksheet, textbook page, math equations, geometry, school assignment, "
+        "coding IDE, programming environment, calculator app, spreadsheet table, learning platform"
+    )
+    
+    label_distraction = (
+        "video game gameplay, Minecraft, Fortnite, Roblox, mobile game, gaming screen, "
+        "social media feed, TikTok, Instagram, Snapchat, YouTube entertainment video, "
+        "Netflix movie or series streaming, WhatsApp or Discord chat messages, "
+        "online shopping store, sports live stream, memes, comic or entertainment website"
+    )
+    
+    label_research = (
+        "Google search engine results page, Bing search, Wikipedia encyclopedia article, "
+        "online dictionary, DeepL or Google Translate, educational news article, "
+        "scientific blog, informational website with text paragraphs, library catalog, "
+        "browser tabs with academic or factual information research"
+    )
+    
+    label_unsure = (
+        "empty desktop wallpaper, lock screen, home screen with app icons, "
+        "system settings menu, file explorer folder, blurry screen, "
+        "loading screen, login window, blank white or black screen"
+    )
+    
+    candidate_labels = [label_relevant, label_distraction, label_research, label_unsure]
+    results = classifier(image, candidate_labels=candidate_labels)
+    
+    top_label = results[0]["label"]
+    top_score = results[0]["score"]
+    
+    # Wenn die KI sich unsicher ist (Score unter 42%), automatisch auf "Unsicher" setzen
+    if top_score < 0.42 or top_label == label_unsure:
+        return "yellow", "Unsicher", top_score
+    elif top_label == label_relevant:
+        return "green", "Unterrichtsrelevant", top_score
+    elif top_label == label_distraction:
+        return "red", "Ablenkung", top_score
+    elif top_label == label_research:
+        return "orange", "Recherche", top_score
+    else:
+        return "yellow", "Unsicher", top_score
+
+# GEMEINSAMER SERVER-SPEICHER für Räume & Schüler-Daten über alle Tabs hinweg
+# Struktur: { room_code: { student_name: { "status": "green", "status_text": "...", "last_update": "10:15", "history": [...] } } }
 @st.cache_resource
 def get_shared_rooms():
     return {}
@@ -109,11 +168,17 @@ if "page" not in st.session_state:
 if "teacher_room_code" not in st.session_state:
     st.session_state.teacher_room_code = None
 
+if "student_joined_room" not in st.session_state:
+    st.session_state.student_joined_room = None
+
+if "student_joined_name" not in st.session_state:
+    st.session_state.student_joined_name = None
+
 if "confirm_close" not in st.session_state:
     st.session_state.confirm_close = False
 
 if "selected_student" not in st.session_state:
-    st.session_state.selected_student = "Anna S."
+    st.session_state.selected_student = None
 
 # Query Parameters am Anfang abfangen
 query_params = st.query_params
@@ -125,7 +190,7 @@ if "action" in query_params and query_params["action"] == "host":
         new_code = str(random.randint(100000, 999999))
         while new_code in shared_rooms:
             new_code = str(random.randint(100000, 999999))
-        shared_rooms[new_code] = []
+        shared_rooms[new_code] = {}
         st.session_state.teacher_room_code = new_code
     
     st.session_state.confirm_close = False
@@ -163,7 +228,7 @@ if st.session_state.page == "home":
 
 
 # ==========================================
-# 2. SCHÜLER-ANSICHT (RAUM BEITRETEN)
+# 2. SCHÜLER-ANSICHT (RAUM BEITRETEN & KI-TEST)
 # ==========================================
 elif st.session_state.page == "student_join":
     col_t1, col_t2, col_t3 = st.columns([1, 8, 2])
@@ -173,38 +238,98 @@ elif st.session_state.page == "student_join":
         st.markdown("<h2 style='margin:0; font-size: 22px; line-height: 50px;'>ClassWork AI: Schüler-Ansicht</h2>", unsafe_allow_html=True)
     with col_t3:
         if st.button("🏠 Home", key="home_btn_1"):
+            st.session_state.student_joined_room = None
+            st.session_state.student_joined_name = None
             navigate_to("home")
             
     st.markdown("---")
     
-    _, form_col, _ = st.columns([1, 1.3, 1])
+    _, form_col, _ = st.columns([1, 1.4, 1])
     with form_col:
         st.markdown("<br>", unsafe_allow_html=True)
         
-        with st.container(border=True):
-            st.markdown("### Raum beitreten")
-            entered_code = st.text_input("Raum-Code", placeholder="Gib den 6-stelligen Raum-Code ein", max_chars=6, label_visibility="collapsed")
-            student_name = st.text_input("Dein Name", placeholder="Dein Vorname (z.B. Alex)")
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            if st.button("Raum beitreten", key="submit_join"):
-                user_code = entered_code.strip()
-                clean_name = student_name.strip()
+        # Prüfen, ob der Schüler bereits verbunden ist und der Raum noch existiert
+        is_connected = (
+            st.session_state.student_joined_room is not None 
+            and st.session_state.student_joined_room in shared_rooms
+            and st.session_state.student_joined_name in shared_rooms[st.session_state.student_joined_room]
+        )
+
+        if not is_connected:
+            with st.container(border=True):
+                st.markdown("### Raum beitreten")
+                entered_code = st.text_input("Raum-Code", placeholder="Gib den 6-stelligen Raum-Code ein", max_chars=6, label_visibility="collapsed")
+                student_name = st.text_input("Dein Name", placeholder="Dein Vorname (z.B. Alex)")
                 
-                if user_code in shared_rooms:
-                    if clean_name:
-                        if clean_name not in shared_rooms[user_code]:
-                            shared_rooms[user_code].append(clean_name)
-                        st.success(f"Erfolgreich mit Raum {user_code} verbunden!")
+                st.markdown("<br>", unsafe_allow_html=True)
+                if st.button("Raum beitreten", key="submit_join"):
+                    user_code = entered_code.strip()
+                    clean_name = student_name.strip()
+                    
+                    if user_code in shared_rooms:
+                        if clean_name:
+                            now_str = datetime.now().strftime("%H:%M:%S")
+                            if clean_name not in shared_rooms[user_code]:
+                                shared_rooms[user_code][clean_name] = {
+                                    "status": "green",
+                                    "status_text": "Unterrichtsrelevant",
+                                    "last_update": f"Beigetreten ({now_str})",
+                                    "history": [
+                                        (now_str, "green", "Unterrichtsrelevant", "Raum beigetreten (Startstatus)")
+                                    ]
+                                }
+                            st.session_state.student_joined_room = user_code
+                            st.session_state.student_joined_name = clean_name
+                            st.rerun()
+                        else:
+                            st.warning("Bitte gib deinen Namen ein.")
+                    elif not user_code:
+                        st.warning("Bitte gib den 6-stelligen Raum-Code ein.")
                     else:
-                        st.warning("Bitte gib deinen Namen ein.")
-                elif not user_code:
-                    st.warning("Bitte gib den 6-stelligen Raum-Code ein.")
-                else:
-                    st.error("Falscher Raum-Code. Es ist kein aktiver Raum mit diesem Code gefunden worden.")
+                        st.error("Falscher Raum-Code. Es ist kein aktiver Raum mit diesem Code gefunden worden.")
+        else:
+            # AKTIVER SCHÜLER-MODUS MIT KI-BILDUPLOAD
+            r_code = st.session_state.student_joined_room
+            s_name = st.session_state.student_joined_name
+            
+            with st.container(border=True):
+                st.success(f"Verbunden mit Raum **{r_code}** als **{s_name}**")
+                st.markdown("#### 📸 Aktivitäts-Check (KI-Test)")
+                st.caption("Lade einen Screenshot (z.B. Goodnotes, Google, Spiel oder Desktop) hoch, um die KI-Erkennung zu testen.")
+                
+                uploaded_file = st.file_uploader("Bild auswählen", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
+                
+                if uploaded_file is not None:
+                    image = Image.open(uploaded_file).convert("RGB")
+                    st.image(image, caption="Vorschau (wird NICHT an den Lehrer gesendet)", use_container_width=True)
+                    
+                    if st.button("🔍 Jetzt mit KI analysieren", key="analyze_btn"):
+                        with st.spinner("KI analysiert Aktivität lokal..."):
+                            color_code, status_label, confidence = classify_student_screen(image)
+                            now_str = datetime.now().strftime("%H:%M:%S")
+                            
+                            dot_map = {"green": "🟢", "red": "🔴", "orange": "🟠", "yellow": "🟡"}
+                            dot = dot_map.get(color_code, "🟡")
+                            
+                            # Ergebnis live in den gemeinsamen Speicher für den Lehrer schreiben
+                            if r_code in shared_rooms and s_name in shared_rooms[r_code]:
+                                shared_rooms[r_code][s_name]["status"] = color_code
+                                shared_rooms[r_code][s_name]["status_text"] = status_label
+                                shared_rooms[r_code][s_name]["last_update"] = f"Um {now_str}"
+                                shared_rooms[r_code][s_name]["history"].insert(
+                                    0, (now_str, color_code, status_label, f"KI-Konfidenz: {int(confidence * 100)}%")
+                                )
+                            
+                            st.info(f"**Ergebnis:** {dot} **{status_label}** (Sicherheit: {int(confidence * 100)}%) — Status wurde an das Lehrer-Dashboard übermittelt!")
+
+                st.markdown("---")
+                if st.button("Raum verlassen", key="leave_room_student"):
+                    st.session_state.student_joined_room = None
+                    st.session_state.student_joined_name = None
+                    st.rerun()
                     
         st.markdown("<br>", unsafe_allow_html=True)
-        st.info("🔒 **Deine Privatsphäre ist geschützt.** Der Lehrer sieht keine Bildschirminhalte.")
+        st.info("🔒 **Deine Privatsphäre ist geschützt.** Es werden keine Bilder an den Lehrer übertragen – nur der Status-Punkt.")
 
 
 # ==========================================
@@ -215,7 +340,7 @@ elif st.session_state.page == "teacher_dashboard":
         new_code = str(random.randint(100000, 999999))
         while new_code in shared_rooms:
             new_code = str(random.randint(100000, 999999))
-        shared_rooms[new_code] = []
+        shared_rooms[new_code] = {}
         st.session_state.teacher_room_code = new_code
 
     display_code = st.session_state.teacher_room_code
@@ -255,39 +380,44 @@ elif st.session_state.page == "teacher_dashboard":
                     st.rerun()
         st.markdown("<br>", unsafe_allow_html=True)
 
-    connected_students = shared_rooms.get(display_code, [])
+    students_dict = shared_rooms.get(display_code, {})
+    student_names = list(students_dict.keys())
 
     # Aktualisieren-Button Bereich
     c_head1, c_head2 = st.columns([5, 1.5])
     with c_head1:
-        st.subheader(f"Verbundene Schüler ({len(connected_students)})")
+        st.subheader(f"Verbundene Schüler ({len(student_names)})")
     with c_head2:
         if st.button("🔄 Aktualisieren", key="refresh_dashboard"):
             st.rerun()
 
-    if not connected_students:
+    if not student_names:
         st.info(f"Der Raum `{display_code}` ist aktuell noch leer. Teile den 6-stelligen Code mit deinen Schülerinnen und Schülern, damit sie beitreten können.")
     else:
-        # Zeige die beigetretenen Schüler in Reihen zu je 3 Karten an
-        for i in range(0, len(connected_students), 3):
+        dot_map = {"green": "🟢", "red": "🔴", "orange": "🟠", "yellow": "🟡"}
+        
+        for i in range(0, len(student_names), 3):
             cols = st.columns(3)
             for j in range(3):
                 idx = i + j
-                if idx < len(connected_students):
-                    name = connected_students[idx]
+                if idx < len(student_names):
+                    name = student_names[idx]
+                    s_data = students_dict[name]
+                    dot = dot_map.get(s_data["status"], "🟢")
+                    
                     with cols[j]:
                         with st.container(border=True):
                             c1, c2 = st.columns([4, 1])
                             with c1:
                                 st.markdown(f"**{name}**")
                             with c2:
-                                st.markdown(f"<div style='text-align: right;'>🟢</div>", unsafe_allow_html=True)
+                                st.markdown(f"<div style='text-align: right;'>{dot}</div>", unsafe_allow_html=True)
                             
                             st.markdown("<div style='text-align: center; padding: 15px 0;'><span style='font-size: 36px;'>👤</span></div>", unsafe_allow_html=True)
                             
-                            bc1, bc2 = st.columns([2, 2])
+                            bc1, bc2 = st.columns([2.2, 1.8])
                             with bc1:
-                                st.caption("Gerade eben")
+                                st.caption(f"{s_data['status_text']} • {s_data['last_update']}")
                             with bc2:
                                 if st.button("Details", key=f"btn_detail_{name}"):
                                     st.session_state.selected_student = name
@@ -298,7 +428,7 @@ elif st.session_state.page == "teacher_dashboard":
 
 
 # ==========================================
-# 4. SCHÜLER-DETAILANSICHT (HISTORIE)
+# 4. SCHÜLER-DETAILANSICHT (LIVE-HISTORIE)
 # ==========================================
 elif st.session_state.page == "student_detail":
     col_t1, col_t2, col_t3 = st.columns([6, 2, 2])
@@ -306,40 +436,32 @@ elif st.session_state.page == "student_detail":
         if st.button("⬅️ Zurück zum Dashboard", key="back_dash"):
             navigate_to("teacher_dashboard")
     with col_t2:
-        st.empty()
+        if st.button("🔄 Aktualisieren", key="refresh_detail"):
+            st.rerun()
     with col_t3:
         display_code = st.session_state.teacher_room_code if st.session_state.teacher_room_code else "------"
         st.markdown(f"<div style='text-align: right;'><span class='room-badge'>Raum: {display_code}</span></div>", unsafe_allow_html=True)
         
-    st.markdown(f"### {st.session_state.selected_student} - Historie (Detaillierte Liste)")
+    sel_name = st.session_state.selected_student
+    st.markdown(f"### {sel_name} - Aktivitäts-Historie")
     st.markdown("---")
     
-    history_data = [
-        ("09:42:30", "green", "Unterrichtsrelevant", "Dauer: 4 Min. 15 Sek. (Anhaltend)"),
-        ("09:38:15", "orange", "Recherche", "Dauer: 2 Min. 30 Sek."),
-        ("09:30:00", "red", "Ablenkung", "Dauer: 3 Min. 0 Sek."),
-        ("09:25:40", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek."),
-        ("09:20:00", "orange", "Recherche", "Dauer: 3 Min. 15 Sek."),
-        ("09:15:30", "green", "Unterrichtsrelevant", "Dauer: 5 Min. 0 Sek.")
-    ]
+    students_dict = shared_rooms.get(display_code, {})
+    history_data = students_dict.get(sel_name, {}).get("history", [])
     
-    for time_stamp, status_color, status_text, duration in history_data:
-        if status_color == "green":
-            dot = "🟢"
-        elif status_color == "orange":
-            dot = "🟠"
-        elif status_color == "red":
-            dot = "🔴"
-        else:
-            dot = "🟡"
-        
-        with st.container(border=True):
-            col_h1, col_h2 = st.columns([1, 6])
-            with col_h1:
-                st.markdown(f"**{time_stamp}**")
-            with col_h2:
-                st.markdown(f"{dot} **{status_text}**")
-                st.caption(duration)
+    if not history_data:
+        st.info("Für diesen Schüler liegen noch keine Aktivitätsmeldungen vor.")
+    else:
+        dot_map = {"green": "🟢", "red": "🔴", "orange": "🟠", "yellow": "🟡"}
+        for time_stamp, status_color, status_text, duration in history_data:
+            dot = dot_map.get(status_color, "🟡")
+            with st.container(border=True):
+                col_h1, col_h2 = st.columns([1, 6])
+                with col_h1:
+                    st.markdown(f"**{time_stamp}**")
+                with col_h2:
+                    st.markdown(f"{dot} **{status_text}**")
+                    st.caption(duration)
                 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟠 Recherche &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
@@ -369,7 +491,7 @@ elif st.session_state.page == "teacher_settings":
     with st.container(border=True):
         st.markdown("#### 🛠️ Systemeinstellungen")
         st.write("**Meldungs-Typen (🟢🔴🟠🟡):** Aktiv")
-        st.write("**Benachrichtigungen:** Push-Hinweise bei starker Ablenkung")
+        st.write("**KI-Modell:** Hugging Face CLIP (`openai/clip-vit-base-patch32`)")
         st.markdown("---")
         st.markdown("**Geräte-Verwaltung:**")
         st.checkbox("Schülermodus automatisch erzwingen", value=True)
