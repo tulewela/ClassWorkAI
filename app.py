@@ -103,7 +103,7 @@ def render_logo(width=80):
 def load_ai_classifier():
     return pipeline("zero-shot-image-classification", model="openai/clip-vit-base-patch32")
 
-# Detaillierte KI-Klassifizierungs-Logik
+# Detaillierte KI-Klassifizierungs-Logik (inkl. KI-Erkennung als Ablenkung)
 def classify_student_screen(image: Image.Image):
     classifier = load_ai_classifier()
     
@@ -114,11 +114,13 @@ def classify_student_screen(image: Image.Image):
         "coding IDE, programming environment, calculator app, spreadsheet table, learning platform"
     )
     
+    # Hier wurden KI-Tools wie ChatGPT, Gemini und Claude explizit zur Ablenkung hinzugefügt
     label_distraction = (
         "video game gameplay, Minecraft, Fortnite, Roblox, mobile game, gaming screen, "
         "social media feed, TikTok, Instagram, Snapchat, YouTube entertainment video, "
         "Netflix movie or series streaming, WhatsApp or Discord chat messages, "
-        "online shopping store, sports live stream, memes, comic or entertainment website"
+        "online shopping store, sports live stream, memes, comic or entertainment website, "
+        "artificial intelligence chatbot, ChatGPT interface, Google Gemini chat, Anthropic Claude, OpenAI, LLM assistant"
     )
     
     label_research = (
@@ -184,7 +186,6 @@ if "nav" in query_params:
 
 if "room" in query_params:
     st.session_state.teacher_room_code = query_params["room"]
-    # Sicherstellen, dass der Raum auch im shared_rooms Speicher existiert
     if query_params["room"] not in shared_rooms:
         shared_rooms[query_params["room"]] = {}
 
@@ -299,7 +300,7 @@ elif st.session_state.page == "student_join":
             with st.container(border=True):
                 st.success(f"Verbunden mit Raum **{r_code}** als **{s_name}**")
                 st.markdown("#### 📸 Aktivitäts-Check (KI-Test)")
-                st.caption("Lade einen Screenshot (z.B. Goodnotes, Google, Spiel oder Desktop) hoch, um die KI-Erkennung zu testen.")
+                st.caption("Lade einen Screenshot (z.B. Goodnotes, Google, ChatGPT/Gemini oder Spiel) hoch, um die KI-Erkennung zu testen.")
                 
                 uploaded_file = st.file_uploader("Bild auswählen", type=["png", "jpg", "jpeg"], label_visibility="collapsed")
                 
