@@ -95,11 +95,7 @@ def render_logo(width=80):
     else:
         st.markdown(f"<h3 style='margin:0;'>Logo fehlt (ClassWorkAILogo.png hochladen)</h3>", unsafe_allow_html=True)
 
-# Navigation via Query Parameters oder Session State abfangen
-query_params = st.query_params
-if "nav" in query_params:
-    st.session_state.page = query_params["nav"]
-
+# Session State Initialisierung
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
@@ -115,6 +111,21 @@ if "confirm_close" not in st.session_state:
 if "selected_student" not in st.session_state:
     st.session_state.selected_student = "Anna S."
 
+# Query Parameters am Anfang abfangen
+query_params = st.query_params
+if "nav" in query_params:
+    st.session_state.page = query_params["nav"]
+
+if "action" in query_params and query_params["action"] == "host":
+    if not st.session_state.room_code:
+        st.session_state.room_code = str(random.randint(100000, 999999))
+        st.session_state.connected_students = []
+    st.session_state.confirm_close = False
+    st.session_state.page = "teacher_dashboard"
+    if "action" in st.query_params:
+        del st.query_params["action"]
+    st.query_params["nav"] = "teacher_dashboard"
+
 def navigate_to(page_name):
     st.session_state.page = page_name
     st.query_params["nav"] = page_name
@@ -122,28 +133,16 @@ def navigate_to(page_name):
 
 
 # ==========================================
-# 1. STARTBILDSCHIRM (HOME) - Exakt im Wunschdesign
+# 1. STARTBILDSCHIRM (HOME)
 # ==========================================
 if st.session_state.page == "home":
-    # Oben links: Das Logo
     top_left_col, _ = st.columns([1, 11])
     with top_left_col:
         render_logo(width=90)
 
-    # Titel und Untertitel ganz oben zentriert
     st.markdown("<h1 style='text-align: center; color: #1A202C; font-weight: 800; font-size: 46px; margin-top: -40px; margin-bottom: 5px;'>ClassWork AI</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #4A5568; font-size: 18px; margin-bottom: 30px;'>Datenschutzfreundliche Aktivitätsmeldung für konzentriertes Lernen.</p>", unsafe_allow_html=True)
 
-    # Lehrer-Raum-Host Aktion abfangen
-    if "action" in query_params and query_params["action"] == "host":
-        if not st.session_state.room_code:
-            st.session_state.room_code = str(random.randint(100000, 999999))
-            st.session_state.connected_students = []
-        st.session_state.confirm_close = False
-        del st.query_params["action"]
-        navigate_to("teacher_dashboard")
-
-    # Die beiden riesigen, quadratischen, gleich großen Buttons in der Mitte (mit target="_self")
     st.markdown("""
         <div class="home-btn-container">
             <a href="?nav=teacher_dashboard&action=host" target="_self" class="home-custom-btn">Als Lehrer<br>Raum hosten</a>
@@ -151,7 +150,6 @@ if st.session_state.page == "home":
         </div>
     """, unsafe_allow_html=True)
 
-    # Footer ganz unten im Viewport
     st.markdown("<div style='margin-top: 35px;'></div>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 13px;'>KI-Analyse im Hintergrund, ohne Video</p>", unsafe_allow_html=True)
 
@@ -182,18 +180,22 @@ elif st.session_state.page == "student_join":
             
             st.markdown("<br>", unsafe_allow_html=True)
             if st.button("Raum beitreten", key="submit_join"):
-                if st.session_state.room_code and entered_code == st.session_state.room_code:
-                    if student_name and student_name not in st.session_state.connected_students:
-                        st.session_state.connected_students.append(student_name)
-                        st.success(f"Erfolgreich mit Raum {entered_code} verbunden!")
-                    elif not student_name:
+                current_room = str(st.session_state.room_code).strip() if st.session_state.room_code else ""
+                user_code = entered_code.strip()
+                clean_name = student_name.strip()
+                
+                if current_room and user_code == current_room:
+                    if clean_name and clean_name not in st.session_state.connected_students:
+                        st.session_state.connected_students.append(clean_name)
+                        st.success(f"Erfolgreich mit Raum {user_code} verbunden!")
+                    elif not clean_name:
                         st.warning("Bitte gib deinen Namen ein.")
                     else:
                         st.info("Du bist bereits mit diesem Raum verbunden.")
-                elif entered_code != st.session_state.room_code:
-                    st.error("Falscher Raum-Code oder kein Raum aktiv.")
+                elif not current_room:
+                    st.error("Es ist aktuell kein Raum aktiv. Der Lehrer muss zuerst einen Raum hosten.")
                 else:
-                    st.warning("Bitte gib den 6-stelligen Raum-Code ein.")
+                    st.error("Falscher Raum-Code. Bitte überprüfe den Code.")
                     
         st.markdown("<br>", unsafe_allow_html=True)
         st.info("🔒 **Deine Privatsphäre ist geschützt.** Der Lehrer sieht keine Bildschirminhalte.")
@@ -277,89 +279,3 @@ elif st.session_state.page == "teacher_dashboard":
 
 # ==========================================
 # 4. SCHÜLER-DETAILANSICHT (HISTORIE)
-# ==========================================
-elif st.session_state.page == "student_detail":
-    col_t1, col_t2, col_t3 = st.columns([6, 2, 2])
-    with col_t1:
-        if st.button("⬅️ Zurück zum Dashboard", key="back_dash"):
-            navigate_to("teacher_dashboard")
-    with col_t2:
-        st.empty()
-    with col_t3:
-        display_code = st.session_state.room_code if st.session_state.room_code else "------"
-        st.markdown(f"<div style='text-align: right;'><span class='room-badge'>Raum: {display_code}</span></div>", unsafe_allow_html=True)
-        
-    st.markdown(f"### {st.session_state.selected_student} - Historie (Detaillierte Liste)")
-    st.markdown("---")
-    
-    history_data = [
-        ("09:42:30", "green", "Unterrichtsrelevant", "Dauer: 4 Min. 15 Sek. (Anhaltend)"),
-        ("09:38:15", "red", "Ablenkung", "Dauer: 3 Min. 20 Sek."),
-        ("09:30:00", "red", "Ablenkung", "Dauer: 3 Min. 0 Sek."),
-        ("09:25:40", "red", "Ablenkung", "Dauer: 5 Min. 0 Sek."),
-        ("09:20:00", "red", "Ablenkung", "Dauer: 5 Min. 0 Sek."),
-        ("09:15:30", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek."),
-        ("09:10:00", "yellow", "Unsicher", "Dauer: 5 Min. 0 Sek."),
-        ("09:05:00", "red", "Ablenkung", "Dauer: 4 Min. 30 Sek."),
-        ("09:00:00", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek.")
-    ]
-    
-    for time_stamp, status_color, status_text, duration in history_data:
-        dot = "🟢" if status_color == "green" else ("🔴" if status_color == "red" else "🟡")
-        
-        with st.container(border=True):
-            col_h1, col_h2 = st.columns([1, 6])
-            with col_h1:
-                st.markdown(f"**{time_stamp}**")
-            with col_h2:
-                st.markdown(f"{dot} **{status_text}**")
-                st.caption(duration)
-                
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
-
-
-# ==========================================
-# 5. LEHRER-EINSTELLUNGEN
-# ==========================================
-elif st.session_state.page == "teacher_settings":
-    col_t1, col_t2 = st.columns([8, 2])
-    with col_t1:
-        if st.button("⬅️ Zurück zum Dashboard", key="back_dash_2"):
-            navigate_to("teacher_dashboard")
-    with col_t2:
-        if st.button("🏠 Home", key="home_btn_2"):
-            navigate_to("home")
-            
-    st.markdown("### ⚙️ ClassWork AI: Einstellungen")
-    st.markdown("---")
-    
-    with st.container(border=True):
-        st.markdown("#### 👤 Profil & Account")
-        st.write("Eingeloggt als: **Lehrer Max M.** (Schule Musterstadt)")
-        if st.button("Profil bearbeiten", key="edit_profile"):
-            st.toast("Profil-Bearbeitung geöffnet.")
-            
-    with st.container(border=True):
-        st.markdown("#### 🛠️ Systemeinstellungen")
-        st.write("**Meldungs-Typen (🟢🔴🟡):** Aktiv")
-        st.write("**Benachrichtigungen:** Push-Hinweise bei starker Ablenkung")
-        st.markdown("---")
-        st.markdown("**Geräte-Verwaltung:**")
-        st.checkbox("Schülermodus automatisch erzwingen", value=True)
-        st.checkbox("Strenger Datenschutz-Check aktiv", value=True)
-        
-    with st.container(border=True):
-        st.markdown("#### 🔒 Datenschutz Regelungen")
-        st.write("Umfassende Datenschutz-Garantie: Lokale Analyse, keine Bildschirminhalte.")
-        st.success("DSGVO Audit: Bestätigt 🟢")
-        if st.button("Umfassende Regelungen ansehen", key="privacy_btn"):
-            st.info("Das System verarbeitet keinerlei Videostreams oder persönliche Inhalte extern.")
-            
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    if st.button("🚪 Logout / Abmelden", key="logout_btn"):
-        navigate_to("home")
-        
-    st.markdown("<br><hr>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 12px;'>ClassWork AI v1.0 | DSGVO Audit Status: Erfolgreich</p>", unsafe_allow_html=True)
