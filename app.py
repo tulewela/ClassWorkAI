@@ -103,15 +103,14 @@ def render_logo(width=80):
 def load_ai_classifier():
     return pipeline("zero-shot-image-classification", model="openai/clip-vit-base-patch32")
 
-# Detaillierte KI-Klassifizierungs-Logik (token-optimiert für CLIP)
+# Detaillierte KI-Klassifizierungs-Logik (optimiert für KI-Tools als Ablenkung)
 def classify_student_screen(image: Image.Image):
     classifier = load_ai_classifier()
     
-    # Kompakte und token-sichere Beschreibungen für höchste Erkennungsgenauigkeit
-    label_relevant = "digital school notes, Goodnotes, Word documents, PDF worksheets, coding environment, math or learning app"
-    label_distraction = "video games, social media, Netflix, YouTube entertainment, WhatsApp, or AI chatbots like ChatGPT and Gemini"
-    label_research = "Google search engine, Wikipedia encyclopedia, online dictionary, or factual research website"
-    label_unsure = "empty desktop wallpaper, lock screen, system settings, or blank screen"
+    label_relevant = "digital school notes, Goodnotes, Microsoft Word documents, PDF worksheets, school assignments, and learning platforms"
+    label_distraction = "video games, social media, Netflix, YouTube videos, WhatsApp chats, and AI chatbots like ChatGPT, Google Gemini, or Anthropic Claude with chat interfaces and prompt input boxes"
+    label_research = "Google web search engine results page, Wikipedia encyclopedia articles, online dictionaries, or standard educational text websites"
+    label_unsure = "empty desktop wallpaper, blank screen, phone lock screen, or system settings menu"
     
     candidate_labels = [label_relevant, label_distraction, label_research, label_unsure]
     results = classifier(image, candidate_labels=candidate_labels)
@@ -119,7 +118,8 @@ def classify_student_screen(image: Image.Image):
     top_label = results[0]["label"]
     top_score = results[0]["score"]
     
-    if top_score < 0.42 or top_label == label_unsure:
+    # Angepasster Schwellenwert (0.38) für noch bessere Erkennung
+    if top_score < 0.38 or top_label == label_unsure:
         return "yellow", "Unsicher", top_score
     elif top_label == label_relevant:
         return "green", "Unterrichtsrelevant", top_score
@@ -522,7 +522,6 @@ elif st.session_state.page == "teacher_settings":
         st.write("**Meldungs-Typen (🟢🔴🟠🟡):** Aktiv")
         st.write("**KI-Modell:** Hugging Face CLIP (`openai/clip-vit-base-patch32`)")
         st.markdown("---")
-        st.mkdir = True # placeholder check
         st.markdown("**Geräte-Verwaltung:**")
         st.checkbox("Schülermodus automatisch erzwingen", value=True)
         st.checkbox("Strenger Datenschutz-Check aktiv", value=True)
