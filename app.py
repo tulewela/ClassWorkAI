@@ -154,7 +154,6 @@ def classify_student_screen(image: Image.Image):
         return "yellow", "Unsicher", top_score
 
 # GEMEINSAMER SERVER-SPEICHER für Räume & Schüler-Daten über alle Tabs hinweg
-# Struktur: { room_code: { student_name: { "status": "green", "status_text": "...", "last_update": "10:15", "history": [...] } } }
 @st.cache_resource
 def get_shared_rooms():
     return {}
@@ -248,7 +247,6 @@ elif st.session_state.page == "student_join":
     with form_col:
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Prüfen, ob der Schüler bereits verbunden ist und der Raum noch existiert
         is_connected = (
             st.session_state.student_joined_room is not None 
             and st.session_state.student_joined_room in shared_rooms
@@ -288,7 +286,6 @@ elif st.session_state.page == "student_join":
                     else:
                         st.error("Falscher Raum-Code. Es ist kein aktiver Raum mit diesem Code gefunden worden.")
         else:
-            # AKTIVER SCHÜLER-MODUS MIT KI-BILDUPLOAD
             r_code = st.session_state.student_joined_room
             s_name = st.session_state.student_joined_name
             
@@ -301,7 +298,8 @@ elif st.session_state.page == "student_join":
                 
                 if uploaded_file is not None:
                     image = Image.open(uploaded_file).convert("RGB")
-                    st.image(image, caption="Vorschau (wird NICHT an den Lehrer gesendet)", use_container_width=True)
+                    # Korrigierter Parameter use_column_width für Streamlit 1.35.0
+                    st.image(image, caption="Vorschau (wird NICHT an den Lehrer gesendet)", use_column_width=True)
                     
                     if st.button("🔍 Jetzt mit KI analysieren", key="analyze_btn"):
                         with st.spinner("KI analysiert Aktivität lokal..."):
@@ -311,7 +309,6 @@ elif st.session_state.page == "student_join":
                             dot_map = {"green": "🟢", "red": "🔴", "orange": "🟠", "yellow": "🟡"}
                             dot = dot_map.get(color_code, "🟡")
                             
-                            # Ergebnis live in den gemeinsamen Speicher für den Lehrer schreiben
                             if r_code in shared_rooms and s_name in shared_rooms[r_code]:
                                 shared_rooms[r_code][s_name]["status"] = color_code
                                 shared_rooms[r_code][s_name]["status_text"] = status_label
@@ -428,86 +425,4 @@ elif st.session_state.page == "teacher_dashboard":
 
 
 # ==========================================
-# 4. SCHÜLER-DETAILANSICHT (LIVE-HISTORIE)
-# ==========================================
-elif st.session_state.page == "student_detail":
-    col_t1, col_t2, col_t3 = st.columns([6, 2, 2])
-    with col_t1:
-        if st.button("⬅️ Zurück zum Dashboard", key="back_dash"):
-            navigate_to("teacher_dashboard")
-    with col_t2:
-        if st.button("🔄 Aktualisieren", key="refresh_detail"):
-            st.rerun()
-    with col_t3:
-        display_code = st.session_state.teacher_room_code if st.session_state.teacher_room_code else "------"
-        st.markdown(f"<div style='text-align: right;'><span class='room-badge'>Raum: {display_code}</span></div>", unsafe_allow_html=True)
-        
-    sel_name = st.session_state.selected_student
-    st.markdown(f"### {sel_name} - Aktivitäts-Historie")
-    st.markdown("---")
-    
-    students_dict = shared_rooms.get(display_code, {})
-    history_data = students_dict.get(sel_name, {}).get("history", [])
-    
-    if not history_data:
-        st.info("Für diesen Schüler liegen noch keine Aktivitätsmeldungen vor.")
-    else:
-        dot_map = {"green": "🟢", "red": "🔴", "orange": "🟠", "yellow": "🟡"}
-        for time_stamp, status_color, status_text, duration in history_data:
-            dot = dot_map.get(status_color, "🟡")
-            with st.container(border=True):
-                col_h1, col_h2 = st.columns([1, 6])
-                with col_h1:
-                    st.markdown(f"**{time_stamp}**")
-                with col_h2:
-                    st.markdown(f"{dot} **{status_text}**")
-                    st.caption(duration)
-                
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟠 Recherche &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
-
-
-# ==========================================
-# 5. LEHRER-EINSTELLUNGEN
-# ==========================================
-elif st.session_state.page == "teacher_settings":
-    col_t1, col_t2 = st.columns([8, 2])
-    with col_t1:
-        if st.button("⬅️ Zurück zum Dashboard", key="back_dash_2"):
-            navigate_to("teacher_dashboard")
-    with col_t2:
-        if st.button("🏠 Home", key="home_btn_2"):
-            navigate_to("home")
-            
-    st.markdown("### ⚙️ ClassWork AI: Einstellungen")
-    st.markdown("---")
-    
-    with st.container(border=True):
-        st.markdown("#### 👤 Profil & Account")
-        st.write("Eingeloggt als: **Lehrer Max M.** (Schule Musterstadt)")
-        if st.button("Profil bearbeiten", key="edit_profile"):
-            st.toast("Profil-Bearbeitung geöffnet.")
-            
-    with st.container(border=True):
-        st.markdown("#### 🛠️ Systemeinstellungen")
-        st.write("**Meldungs-Typen (🟢🔴🟠🟡):** Aktiv")
-        st.write("**KI-Modell:** Hugging Face CLIP (`openai/clip-vit-base-patch32`)")
-        st.markdown("---")
-        st.markdown("**Geräte-Verwaltung:**")
-        st.checkbox("Schülermodus automatisch erzwingen", value=True)
-        st.checkbox("Strenger Datenschutz-Check aktiv", value=True)
-        
-    with st.container(border=True):
-        st.markdown("#### 🔒 Datenschutz Regelungen")
-        st.write("Umfassende Datenschutz-Garantie: Lokale Analyse, keine Bildschirminhalte.")
-        st.success("DSGVO Audit: Bestätigt 🟢")
-        if st.button("Umfassende Regelungen ansehen", key="privacy_btn"):
-            st.info("Das System verarbeitet keinerlei Videostreams oder persönliche Inhalte extern.")
-            
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    if st.button("🚪 Logout / Abmelden", key="logout_btn"):
-        navigate_to("home")
-        
-    st.markdown("<br><hr>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 12px;'>ClassWork AI v1.0 | DSGVO Audit Status: Erfolgreich</p>", unsafe_allow_html=True)
+# 4. SCHÜLER
