@@ -103,38 +103,15 @@ def render_logo(width=80):
 def load_ai_classifier():
     return pipeline("zero-shot-image-classification", model="openai/clip-vit-base-patch32")
 
-# Detaillierte KI-Klassifizierungs-Logik (inkl. KI-Erkennung als Ablenkung)
+# Detaillierte KI-Klassifizierungs-Logik (token-optimiert für CLIP)
 def classify_student_screen(image: Image.Image):
     classifier = load_ai_classifier()
     
-    label_relevant = (
-        "digital school notes, handwritten tablet notes, Goodnotes, Notability, OneNote, "
-        "Microsoft Word document, Google Docs text editor, PowerPoint presentation slides, "
-        "PDF worksheet, textbook page, math equations, geometry, school assignment, "
-        "coding IDE, programming environment, calculator app, spreadsheet table, learning platform"
-    )
-    
-    # Hier wurden KI-Tools wie ChatGPT, Gemini und Claude explizit zur Ablenkung hinzugefügt
-    label_distraction = (
-        "video game gameplay, Minecraft, Fortnite, Roblox, mobile game, gaming screen, "
-        "social media feed, TikTok, Instagram, Snapchat, YouTube entertainment video, "
-        "Netflix movie or series streaming, WhatsApp or Discord chat messages, "
-        "online shopping store, sports live stream, memes, comic or entertainment website, "
-        "artificial intelligence chatbot, ChatGPT interface, Google Gemini chat, Anthropic Claude, OpenAI, LLM assistant"
-    )
-    
-    label_research = (
-        "Google search engine results page, Bing search, Wikipedia encyclopedia article, "
-        "online dictionary, DeepL or Google Translate, educational news article, "
-        "scientific blog, informational website with text paragraphs, library catalog, "
-        "browser tabs with academic or factual information research"
-    )
-    
-    label_unsure = (
-        "empty desktop wallpaper, lock screen, home screen with app icons, "
-        "system settings menu, file explorer folder, blurry screen, "
-        "loading screen, login window, blank white or black screen"
-    )
+    # Kompakte und token-sichere Beschreibungen für höchste Erkennungsgenauigkeit
+    label_relevant = "digital school notes, Goodnotes, Word documents, PDF worksheets, coding environment, math or learning app"
+    label_distraction = "video games, social media, Netflix, YouTube entertainment, WhatsApp, or AI chatbots like ChatGPT and Gemini"
+    label_research = "Google search engine, Wikipedia encyclopedia, online dictionary, or factual research website"
+    label_unsure = "empty desktop wallpaper, lock screen, system settings, or blank screen"
     
     candidate_labels = [label_relevant, label_distraction, label_research, label_unsure]
     results = classifier(image, candidate_labels=candidate_labels)
@@ -175,6 +152,12 @@ if "student_joined_name" not in st.session_state:
 
 if "confirm_close" not in st.session_state:
     st.session_state.confirm_close = False
+
+if "confirm_leave" not in st.session_state:
+    st.session_state.confirm_leave = False
+
+if "confirm_kick" not in st.session_state:
+    st.session_state.confirm_kick = False
 
 if "selected_student" not in st.session_state:
     st.session_state.selected_student = "Anna S."
@@ -238,28 +221,51 @@ if st.session_state.page == "home":
 # 2. SCHÜLER-ANSICHT (RAUM BEITRETEN & KI-TEST)
 # ==========================================
 elif st.session_state.page == "student_join":
-    col_t1, col_t2, col_t3 = st.columns([1, 8, 2])
+    col_t1, col_t2, col_t3 = st.columns([1, 7, 3])
     with col_t1:
         render_logo(width=50)
     with col_t2:
         st.markdown("<h2 style='margin:0; font-size: 22px; line-height: 50px;'>ClassWork AI: Schüler-Ansicht</h2>", unsafe_allow_html=True)
     with col_t3:
-        if st.button("🏠 Home", key="home_btn_1"):
-            st.session_state.student_joined_room = None
-            st.session_state.student_joined_name = None
-            navigate_to("home")
-            
-    st.markdown("---")
-    
-    _, form_col, _ = st.columns([1, 1.4, 1])
-    with form_col:
-        st.markdown("<br>", unsafe_allow_html=True)
-        
         is_connected = (
             st.session_state.student_joined_room is not None 
             and st.session_state.student_joined_room in shared_rooms
             and st.session_state.student_joined_name in shared_rooms[st.session_state.student_joined_room]
         )
+        if is_connected:
+            if st.button("🚪 Raum verlassen", key="leave_room_init_btn"):
+                st.session_state.confirm_leave = True
+                st.rerun()
+        else:
+            if st.button("🏠 Home", key="home_btn_1"):
+                navigate_to("home")
+            
+    st.markdown("---")
+
+    # Sicherheitsabfrage für Raum verlassen (Schüler)
+    if st.session_state.confirm_leave:
+        with st.container(border=True):
+            st.warning("⚠️ **Möchtest du den Raum wirklich verlassen?**")
+            c_ja, c_nein, _ = st.columns([1, 1, 3])
+            with c_ja:
+                if st.button("Ja, verlassen", key="yes_leave"):
+                    r_code = st.session_state.student_joined_room
+                    s_name = st.session_state.student_joined_name
+                    if r_code in shared_rooms and s_name in shared_rooms[r_code]:
+                        del shared_rooms[r_code][s_name]
+                    st.session_state.student_joined_room = None
+                    st.session_state.student_joined_name = None
+                    st.session_state.confirm_leave = False
+                    navigate_to("home")
+            with c_nein:
+                if st.button("Nein", key="no_leave"):
+                    st.session_state.confirm_leave = False
+                    st.rerun()
+        st.markdown("<br>", unsafe_allow_html=True)
+    
+    _, form_col, _ = st.columns([1, 1.4, 1])
+    with form_col:
+        st.markdown("<br>", unsafe_allow_html=True)
 
         if not is_connected:
             with st.container(border=True):
@@ -326,12 +332,6 @@ elif st.session_state.page == "student_join":
                             
                             st.info(f"**Ergebnis:** {dot} **{status_label}** (Sicherheit: {int(confidence * 100)}%) — Status wurde an das Lehrer-Dashboard übermittelt!")
 
-                st.markdown("---")
-                if st.button("Raum verlassen", key="leave_room_student"):
-                    st.session_state.student_joined_room = None
-                    st.session_state.student_joined_name = None
-                    st.rerun()
-                    
         st.markdown("<br>", unsafe_allow_html=True)
         st.info("🔒 **Deine Privatsphäre ist geschützt.** Es werden keine Bilder an den Lehrer übertragen – nur der Status-Punkt.")
 
@@ -428,6 +428,7 @@ elif st.session_state.page == "teacher_dashboard":
                             with bc2:
                                 if st.button("Details", key=f"btn_detail_{name}"):
                                     st.session_state.selected_student = name
+                                    st.session_state.confirm_kick = False
                                     navigate_to("student_detail")
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -435,10 +436,10 @@ elif st.session_state.page == "teacher_dashboard":
 
 
 # ==========================================
-# 4. SCHÜLER-DETAILANSICHT (LIVE-HISTORIE)
+# 4. SCHÜLER-DETAILANSICHT (LIVE-HISTORIE & KICK)
 # ==========================================
 elif st.session_state.page == "student_detail":
-    col_t1, col_t2, col_t3 = st.columns([6, 2, 2])
+    col_t1, col_t2, col_t3 = st.columns([4, 2, 4])
     with col_t1:
         if st.button("⬅️ Zurück zum Dashboard", key="back_dash"):
             navigate_to("teacher_dashboard")
@@ -451,6 +452,27 @@ elif st.session_state.page == "student_detail":
         
     sel_name = st.session_state.selected_student
     st.markdown(f"### {sel_name} - Aktivitäts-Historie")
+    
+    # Button zum Rausschmeißen des Schülers
+    if st.button(f"🚫 {sel_name} aus dem Raum werfen", key="kick_student_init"):
+        st.session_state.confirm_kick = True
+
+    # Sicherheitsabfrage für Schüler rausschmeißen
+    if st.session_state.confirm_kick:
+        with st.container(border=True):
+            st.warning(f"⚠️ **Möchtest du {sel_name} wirklich aus dem Raum werfen?**")
+            c_ja, c_nein, _ = st.columns([1, 1, 3])
+            with c_ja:
+                if st.button("Ja, rausschmeißen", key="yes_kick"):
+                    if display_code in shared_rooms and sel_name in shared_rooms[display_code]:
+                        del shared_rooms[display_code][sel_name]
+                    st.session_state.confirm_kick = False
+                    navigate_to("teacher_dashboard")
+            with c_nein:
+                if st.button("Nein", key="no_kick"):
+                    st.session_state.confirm_kick = False
+                    st.rerun()
+
     st.markdown("---")
     
     students_dict = shared_rooms.get(display_code, {})
@@ -500,6 +522,7 @@ elif st.session_state.page == "teacher_settings":
         st.write("**Meldungs-Typen (🟢🔴🟠🟡):** Aktiv")
         st.write("**KI-Modell:** Hugging Face CLIP (`openai/clip-vit-base-patch32`)")
         st.markdown("---")
+        st.mkdir = True # placeholder check
         st.markdown("**Geräte-Verwaltung:**")
         st.checkbox("Schülermodus automatisch erzwingen", value=True)
         st.checkbox("Strenger Datenschutz-Check aktiv", value=True)
