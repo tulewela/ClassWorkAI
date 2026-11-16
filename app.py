@@ -289,13 +289,12 @@ elif st.session_state.page == "teacher_dashboard":
                             with bc1:
                                 st.caption("Gerade eben")
                             with bc2:
-                                # Verwendung des sicheren und eindeutigen Namens-Keys statt Index
                                 if st.button("Details", key=f"btn_detail_{name}"):
                                     st.session_state.selected_student = name
                                     navigate_to("student_detail")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟠 Recherche &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
 
 
 # ==========================================
@@ -317,18 +316,22 @@ elif st.session_state.page == "student_detail":
     
     history_data = [
         ("09:42:30", "green", "Unterrichtsrelevant", "Dauer: 4 Min. 15 Sek. (Anhaltend)"),
-        ("09:38:15", "red", "Ablenkung", "Dauer: 3 Min. 20 Sek."),
+        ("09:38:15", "orange", "Recherche", "Dauer: 2 Min. 30 Sek."),
         ("09:30:00", "red", "Ablenkung", "Dauer: 3 Min. 0 Sek."),
-        ("09:25:40", "red", "Ablenkung", "Dauer: 5 Min. 0 Sek."),
-        ("09:20:00", "red", "Ablencanung", "Dauer: 5 Min. 0 Sek."), # Note: kept text intact
-        ("09:15:30", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek."),
-        ("09:10:00", "yellow", "Unsicher", "Dauer: 5 Min. 0 Sek."),
-        ("09:05:00", "red", "Ablenkung", "Dauer: 4 Min. 30 Sek."),
-        ("09:00:00", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek.")
+        ("09:25:40", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek."),
+        ("09:20:00", "orange", "Recherche", "Dauer: 3 Min. 15 Sek."),
+        ("09:15:30", "green", "Unterrichtsrelevant", "Dauer: 5 Min. 0 Sek.")
     ]
     
     for time_stamp, status_color, status_text, duration in history_data:
-        dot = "🟢" if status_color == "green" else ("🔴" if status_color == "red" else "🟡")
+        if status_color == "green":
+            dot = "🟢"
+        elif status_color == "orange":
+            dot = "🟠"
+        elif status_color == "red":
+            dot = "🔴"
+        else:
+            dot = "🟡"
         
         with st.container(border=True):
             col_h1, col_h2 = st.columns([1, 6])
@@ -339,7 +342,7 @@ elif st.session_state.page == "student_detail":
                 st.caption(duration)
                 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟠 Recherche &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
 
 
 # ==========================================
@@ -365,7 +368,7 @@ elif st.session_state.page == "teacher_settings":
             
     with st.container(border=True):
         st.markdown("#### 🛠️ Systemeinstellungen")
-        st.write("**Meldungs-Typen (🟢🔴🟡):** Aktiv")
+        st.write("**Meldungs-Typen (🟢🔴🟠🟡):** Aktiv")
         st.write("**Benachrichtigungen:** Push-Hinweise bei starker Ablenkung")
         st.markdown("---")
         st.markdown("**Geräte-Verwaltung:**")
