@@ -257,11 +257,17 @@ elif st.session_state.page == "teacher_dashboard":
 
     connected_students = shared_rooms.get(display_code, [])
 
+    # Neuer Aktualisieren-Button Bereich
+    c_head1, c_head2 = st.columns([5, 1.5])
+    with c_head1:
+        st.subheader(f"Verbundene Schüler ({len(connected_students)})")
+    with c_head2:
+        if st.button("🔄 Aktualisieren", key="refresh_dashboard"):
+            st.rerun()
+
     if not connected_students:
         st.info(f"Der Raum `{display_code}` ist aktuell noch leer. Teile den 6-stelligen Code mit deinen Schülerinnen und Schülern, damit sie beitreten können.")
     else:
-        st.subheader(f"Verbundene Schüler ({len(connected_students)})")
-        
         # Zeige die beigetretenen Schüler in Reihen zu je 3 Karten an
         for i in range(0, len(connected_students), 3):
             cols = st.columns(3)
@@ -284,98 +290,4 @@ elif st.session_state.page == "teacher_dashboard":
                                 st.caption("Gerade eben")
                             with bc2:
                                 if st.button("Details", key=f"btn_detail_{idx}"):
-                                    st.session_state.selected_student = name
-                                    navigate_to("student_detail")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
-
-
-# ==========================================
-# 4. SCHÜLER-DETAILANSICHT (HISTORIE)
-# ==========================================
-elif st.session_state.page == "student_detail":
-    col_t1, col_t2, col_t3 = st.columns([6, 2, 2])
-    with col_t1:
-        if st.button("⬅️ Zurück zum Dashboard", key="back_dash"):
-            navigate_to("teacher_dashboard")
-    with col_t2:
-        st.empty()
-    with col_t3:
-        display_code = st.session_state.teacher_room_code if st.session_state.teacher_room_code else "------"
-        st.markdown(f"<div style='text-align: right;'><span class='room-badge'>Raum: {display_code}</span></div>", unsafe_allow_html=True)
-        
-    st.markdown(f"### {st.session_state.selected_student} - Historie (Detaillierte Liste)")
-    st.markdown("---")
-    
-    history_data = [
-        ("09:42:30", "green", "Unterrichtsrelevant", "Dauer: 4 Min. 15 Sek. (Anhaltend)"),
-        ("09:38:15", "red", "Ablenkung", "Dauer: 3 Min. 20 Sek."),
-        ("09:30:00", "red", "Ablenkung", "Dauer: 3 Min. 0 Sek."),
-        ("09:25:40", "red", "Ablenkung", "Dauer: 5 Min. 0 Sek."),
-        ("09:20:00", "red", "Ablenkung", "Dauer: 5 Min. 0 Sek."),
-        ("09:15:30", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek."),
-        ("09:10:00", "yellow", "Unsicher", "Dauer: 5 Min. 0 Sek."),
-        ("09:05:00", "red", "Ablenkung", "Dauer: 4 Min. 30 Sek."),
-        ("09:00:00", "yellow", "Unsicher", "Dauer: 4 Min. 30 Sek.")
-    ]
-    
-    for time_stamp, status_color, status_text, duration in history_data:
-        dot = "🟢" if status_color == "green" else ("🔴" if status_color == "red" else "🟡")
-        
-        with st.container(border=True):
-            col_h1, col_h2 = st.columns([1, 6])
-            with col_h1:
-                st.markdown(f"**{time_stamp}**")
-            with col_h2:
-                st.markdown(f"{dot} **{status_text}**")
-                st.caption(duration)
-                
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align: center; background: #F8FAFC; padding: 12px; border-radius: 14px; font-weight: 500;'>🟢 Unterrichtsrelevant &nbsp;|&nbsp; 🔴 Ablenkung &nbsp;|&nbsp; 🟡 Unsicher</div>", unsafe_allow_html=True)
-
-
-# ==========================================
-# 5. LEHRER-EINSTELLUNGEN
-# ==========================================
-elif st.session_state.page == "teacher_settings":
-    col_t1, col_t2 = st.columns([8, 2])
-    with col_t1:
-        if st.button("⬅️ Zurück zum Dashboard", key="back_dash_2"):
-            navigate_to("teacher_dashboard")
-    with col_t2:
-        if st.button("🏠 Home", key="home_btn_2"):
-            navigate_to("home")
-            
-    st.markdown("### ⚙️ ClassWork AI: Einstellungen")
-    st.markdown("---")
-    
-    with st.container(border=True):
-        st.markdown("#### 👤 Profil & Account")
-        st.write("Eingeloggt als: **Lehrer Max M.** (Schule Musterstadt)")
-        if st.button("Profil bearbeiten", key="edit_profile"):
-            st.toast("Profil-Bearbeitung geöffnet.")
-            
-    with st.container(border=True):
-        st.markdown("#### 🛠️ Systemeinstellungen")
-        st.write("**Meldungs-Typen (🟢🔴🟡):** Aktiv")
-        st.write("**Benachrichtigungen:** Push-Hinweise bei starker Ablenkung")
-        st.markdown("---")
-        st.markdown("**Geräte-Verwaltung:**")
-        st.checkbox("Schülermodus automatisch erzwingen", value=True)
-        st.checkbox("Strenger Datenschutz-Check aktiv", value=True)
-        
-    with st.container(border=True):
-        st.markdown("#### 🔒 Datenschutz Regelungen")
-        st.write("Umfassende Datenschutz-Garantie: Lokale Analyse, keine Bildschirminhalte.")
-        st.success("DSGVO Audit: Bestätigt 🟢")
-        if st.button("Umfassende Regelungen ansehen", key="privacy_btn"):
-            st.info("Das System verarbeitet keinerlei Videostreams oder persönliche Inhalte extern.")
-            
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    if st.button("🚪 Logout / Abmelden", key="logout_btn"):
-        navigate_to("home")
-        
-    st.markdown("<br><hr>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #A0AEC0; font-size: 12px;'>ClassWork AI v1.0 | DSGVO Audit Status: Erfolgreich</p>", unsafe_allow_html=True)
+                                    st.session_state.selected_
