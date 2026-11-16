@@ -163,8 +163,8 @@ if "confirm_close" not in st.session_state:
 if "confirm_leave" not in st.session_state:
     st.session_state.confirm_leave = False
 
-if "confirm_kick_user" not in st.session_state:
-    st.session_state.confirm_kick_user = None
+if "confirm_kick" not in st.session_state:
+    st.session_state.confirm_kick = False
 
 if "selected_student" not in st.session_state:
     st.session_state.selected_student = "Anna S."
@@ -177,16 +177,19 @@ if "nav" in query_params:
 if "room" in query_params:
     r_code = query_params["room"]
     st.session_state.teacher_room_code = r_code
-    st.session_state.student_joined_room = r_code
     if r_code not in shared_rooms:
         shared_rooms[r_code] = {}
 
 if "student" in query_params:
     s_name = query_params["student"]
     st.session_state.student_joined_name = s_name
+    st.session_state.page = "student_join"
     if "room" in query_params:
         r_code = query_params["room"]
-        if r_code in shared_rooms and s_name not in shared_rooms[r_code]:
+        st.session_state.student_joined_room = r_code
+        if r_code not in shared_rooms:
+            shared_rooms[r_code] = {}
+        if s_name not in shared_rooms[r_code]:
             shared_rooms[r_code][s_name] = {
                 "status": "green",
                 "status_text": "Unterrichtsrelevant",
@@ -326,6 +329,7 @@ elif st.session_state.page == "student_join":
                             st.session_state.student_joined_name = clean_name
                             st.query_params["room"] = user_code
                             st.query_params["student"] = clean_name
+                            st.query_params["nav"] = "student_join"
                             st.rerun()
                         else:
                             st.warning("Bitte gib deinen Namen ein.")
@@ -468,7 +472,7 @@ elif st.session_state.page == "teacher_dashboard":
                             with bc2:
                                 if st.button("Details", key=f"btn_detail_{name}"):
                                     st.session_state.selected_student = name
-                                    st.session_state.confirm_kick_user = None
+                                    st.session_state.confirm_kick = False
                                     navigate_to("student_detail")
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -495,10 +499,11 @@ elif st.session_state.page == "student_detail":
     
     # Button zum Rausschmeißen des Schülers
     if st.button(f"🚫 {sel_name} aus dem Raum werfen", key="kick_student_init"):
-        st.session_state.confirm_kick_user = sel_name
+        st.session_state.confirm_kick = True
+        st.rerun()
 
-    # Sicherheitsabfrage für Schüler rausschmeißen
-    if st.session_state.confirm_kick_user == sel_name:
+    # Sicherheitsabfrage für Schüler rausschmeißen (robust gelöst)
+    if st.session_state.confirm_kick:
         with st.container(border=True):
             st.warning(f"⚠️ **Möchtest du {sel_name} wirklich aus dem Raum werfen?**")
             c_ja, c_nein, _ = st.columns([1, 1, 3])
@@ -508,11 +513,11 @@ elif st.session_state.page == "student_detail":
                     if room_to_use and room_to_use in shared_rooms:
                         if sel_name in shared_rooms[room_to_use]:
                             del shared_rooms[room_to_use][sel_name]
-                    st.session_state.confirm_kick_user = None
+                    st.session_state.confirm_kick = False
                     navigate_to("teacher_dashboard")
             with c_nein:
                 if st.button("Nein", key="no_kick"):
-                    st.session_state.confirm_kick_user = None
+                    st.session_state.confirm_kick = False
                     st.rerun()
 
     st.markdown("---")
